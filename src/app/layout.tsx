@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "PDA", template: "%s · PDA" },
+  title: { default: "Fries", template: "%s · Fries" },
   description: "Scan the QR at the venue, record a short intro, and meet the people who are here tonight.",
 };
 

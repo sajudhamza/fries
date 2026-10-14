@@ -5,9 +5,9 @@ export function Brand({ href = "/", small = false }: { href?: string; small?: bo
   return (
     <Link href={href} className="inline-flex items-center gap-2">
       <span className={clsx("grid place-items-center rounded-xl bg-rose-500 font-display font-bold text-white", small ? "h-7 w-7 text-sm" : "h-9 w-9 text-base")}>
-        P
+        F
       </span>
-      <span className={clsx("font-display font-bold tracking-tight", small ? "text-lg" : "text-xl")}>PDA</span>
+      <span className={clsx("font-display font-bold tracking-tight", small ? "text-lg" : "text-xl")}>Fries</span>
     </Link>
   );
 }

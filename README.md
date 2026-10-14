@@ -1,4 +1,4 @@
-# PDA web
+# Fries
 
 Location-scoped social profiles. Every **location** (venue or event) gets its own QR code. Guests scan it,
 record a 1 to 5 minute intro video, and the video is turned into their profile. Guests can only see other guests

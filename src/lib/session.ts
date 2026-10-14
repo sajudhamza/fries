@@ -45,7 +45,7 @@ const secure = process.env.NODE_ENV === "production";
 
 // --- admin ------------------------------------------------------------------------------------
 
-const ADMIN_COOKIE = "pda_admin";
+const ADMIN_COOKIE = "fries_admin";
 
 export function setAdminSession() {
   const exp = Date.now() + 12 * 3600_000;
@@ -64,7 +64,7 @@ export function isAdmin(): boolean {
 
 // --- attendee (one cookie per location) ---------------------------------------------------------
 
-const attendeeCookie = (code: string) => `pda_l_${code}`;
+const attendeeCookie = (code: string) => `fries_l_${code}`;
 
 export function setAttendeeSession(code: string, profileId: string, endsAt: string) {
   // Never outlive the event (plus a small grace so the "event ended" page still recognises them).

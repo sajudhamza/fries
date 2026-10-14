@@ -7,13 +7,13 @@ import { Pool } from "pg";
 import type { Location, Profile, ProfileStatus } from "../types";
 import type { Store } from "../store";
 
-const g = globalThis as unknown as { __pdaPool?: Pool };
+const g = globalThis as unknown as { __friesPool?: Pool };
 
 function pool(): Pool {
-  if (!g.__pdaPool) {
+  if (!g.__friesPool) {
     const url = process.env.DATABASE_URL!;
     const local = /localhost|127\.0\.0\.1/.test(url);
-    g.__pdaPool = new Pool({
+    g.__friesPool = new Pool({
       connectionString: url,
       max: Number(process.env.DATABASE_POOL_MAX ?? 3),
       idleTimeoutMillis: 10_000,
@@ -21,7 +21,7 @@ function pool(): Pool {
       ssl: local ? undefined : { rejectUnauthorized: false },
     });
   }
-  return g.__pdaPool;
+  return g.__friesPool;
 }
 
 const q = (text: string, params: unknown[] = []) => pool().query(text, params);

@@ -1,8 +1,8 @@
 {
-  "name": "pda-web",
+  "name": "fries",
   "version": "0.1.0",
   "private": true,
-  "description": "PDA web: location-scoped profiles created from a short intro video, joined by QR code",
+  "description": "Fries: location-scoped profiles created from a short intro video, joined by QR code",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

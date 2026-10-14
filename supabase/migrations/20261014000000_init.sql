@@ -1,4 +1,4 @@
--- PDA web: QR-scoped locations and the attendee profiles created from intro videos.
+-- Fries: QR-scoped locations and the attendee profiles created from intro videos.
 
 create table if not exists locations (
   id          uuid primary key,
