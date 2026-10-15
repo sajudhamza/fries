@@ -59,9 +59,9 @@ export async function requestUpload(
   const { loc, me } = await requireMe(code);
   const type = meta.contentType.split(";")[0].trim().toLowerCase();
   if (!type.startsWith("video/")) return { ok: false, error: "That file isn't a video." };
-  if (meta.size > VIDEO_MAX_BYTES) return { ok: false, error: "That video is too large (max 300 MB)." };
-  if (meta.seconds < VIDEO_MIN_SECONDS - 2 || meta.seconds > VIDEO_MAX_SECONDS + 5) {
-    return { ok: false, error: "Your intro needs to be between 1 and 5 minutes long." };
+  if (meta.size > VIDEO_MAX_BYTES) return { ok: false, error: "That video file is too large. Try a shorter clip." };
+  if (meta.seconds < VIDEO_MIN_SECONDS - 1 || meta.seconds > VIDEO_MAX_SECONDS + 3) {
+    return { ok: false, error: `Your intro needs to be between ${VIDEO_MIN_SECONDS} and ${VIDEO_MAX_SECONDS} seconds long.` };
   }
   const key = `${loc.id}/${me.id}.${EXT[type] ?? "bin"}`;
   const s = await store();

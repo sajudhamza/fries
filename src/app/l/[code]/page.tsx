@@ -33,7 +33,7 @@ export default async function JoinPage({ params, searchParams }: { params: { cod
         <p className="text-sm font-semibold uppercase tracking-[0.25em] text-rose-400">You&apos;re at</p>
         <h1 className="mt-2 font-display text-4xl font-bold leading-tight">{loc.name}</h1>
         {loc.venue && <p className="mt-1 text-haze-300">{loc.venue}</p>}
-        <p className="mt-6 text-lg text-haze-100">Record a quick 1 to 5 minute intro. We&apos;ll turn it into your profile so you can see who else is here tonight.</p>
+        <p className="mt-6 text-lg text-haze-100">Record a quick 15 to 60 second intro. We&apos;ll turn it into your profile so you can see who else is here tonight.</p>
       </section>
 
       <ol className="mt-8 space-y-3">

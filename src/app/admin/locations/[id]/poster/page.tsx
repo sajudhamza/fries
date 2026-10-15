@@ -28,7 +28,7 @@ export default async function Poster({ params }: { params: { id: string } }) {
         <div className="mt-8 w-72 [&_svg]:h-auto [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} />
         <ol className="mt-8 space-y-1 text-left text-lg">
           <li><b>1.</b> Scan with your phone camera</li>
-          <li><b>2.</b> Record a 1 to 5 minute intro</li>
+          <li><b>2.</b> Record a 15 to 60 second intro</li>
           <li><b>3.</b> See who else is here</li>
         </ol>
         <p className="mt-8 text-sm text-night-600">Profiles are only visible to people at this event and are deleted when it ends.</p>

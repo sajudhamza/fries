@@ -83,6 +83,6 @@ export const EMPTY_FIELDS: ProfileFields = {
   interestedIn: "",
 };
 
-export const VIDEO_MIN_SECONDS = 60;
-export const VIDEO_MAX_SECONDS = 300;
+export const VIDEO_MIN_SECONDS = 15;
+export const VIDEO_MAX_SECONDS = 60;
 export const VIDEO_MAX_BYTES = 300 * 1024 * 1024;

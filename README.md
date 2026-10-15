@@ -1,7 +1,7 @@
 # Fries
 
 Location-scoped social profiles. Every **location** (venue or event) gets its own QR code. Guests scan it,
-record a 1 to 5 minute intro video, and the video is turned into their profile. Guests can only see other guests
+record a 15 to 60 second intro video, and the video is turned into their profile. Guests can only see other guests
 who joined through **the same QR code**, and every profile and video in a location is deleted when its event ends.
 
 ## Quick start
@@ -22,7 +22,7 @@ Camera recording needs HTTPS on phones (localhost is exempt); the upload-a-file 
 | `/admin` | Central console: add a location, see its status and live profile count |
 | `/admin/locations/:id` | QR code (PNG/SVG download, printable poster), attendees, edit end time, end event now, delete |
 | `/l/:code` | What the QR opens: event intro + consent (18+, processing, deletion at event end) |
-| `/l/:code/video` | Record in the browser or upload a 1 to 5 min video (direct upload, progress bar) |
+| `/l/:code/video` | Record in the browser or upload a 15 to 60 second video (direct upload, progress bar) |
 | `/l/:code/me` | Review the details extracted from the video, edit, go live, or delete now |
 | `/l/:code/people` | Everyone live at this location (only visible once your own profile is live) |
 | `/api/cron/purge` | `Authorization: Bearer $CRON_SECRET`; ends every event past its end time |
