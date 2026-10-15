@@ -4,6 +4,7 @@ import { PublicShell } from "../PublicShell";
 import { Avatar } from "@/components/ui";
 import { loadAttendee, nextStep } from "@/lib/attendee";
 import { store } from "@/lib/store";
+import { canSee, needsMatchPrefs } from "@/lib/visibility";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Who's here" };
@@ -13,15 +14,21 @@ export default async function PeoplePage({ params }: { params: { code: string } 
   if (loc.endedAt || !me) redirect(`/l/${params.code}`);
   // You see others only once your own profile is live.
   if (me.status !== "live") redirect(nextStep(params.code, me));
+  if (needsMatchPrefs(loc, me)) redirect(`/l/${params.code}/me?prefs=1`);
 
-  const others = (await (await store()).listProfiles(loc.id, "live")).filter((p) => p.id !== me.id);
+  const others = (await (await store()).listProfiles(loc.id, "live")).filter((p) => p.id !== me.id && canSee(loc, me, p));
+  const matchmaking = loc.eventType === "matchmaking";
 
   return (
     <PublicShell loc={loc} wide>
       <div className="mt-2 flex items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-bold">Who&apos;s here</h1>
-          <p className="mt-1 text-sm text-haze-300">{others.length === 0 ? "You're the first one. Others will show up as they join." : `${others.length} ${others.length === 1 ? "person" : "people"} at ${loc.name}`}</p>
+          <h1 className="font-display text-3xl font-bold">{matchmaking ? "Your matches" : loc.eventType === "business" ? "Who to meet" : "Who\u2019s here"}</h1>
+          <p className="mt-1 text-sm text-haze-300">{others.length === 0
+              ? matchmaking
+                ? "No matches yet. New people show up here as they join."
+                : "You're the first one. Others will show up as they join."
+              : `${others.length} ${others.length === 1 ? (matchmaking ? "match" : "person") : matchmaking ? "matches" : "people"} at ${loc.name}`}</p>
         </div>
         <Link href={`/l/${loc.code}/me`} className="flex items-center gap-2 rounded-full border border-white/15 py-1 pl-1 pr-3 text-sm hover:bg-white/5">
           <span className="block w-7 overflow-hidden rounded-full"><Avatar name={me.fields.name} photo={me.photo} /></span>

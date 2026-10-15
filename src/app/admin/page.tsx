@@ -8,12 +8,14 @@ import { purgeExpired } from "@/lib/lifecycle";
 import { isAdmin } from "@/lib/session";
 import { store } from "@/lib/store";
 import { locationState } from "@/lib/util";
+import { EventTypePicker } from "@/components/EventTypePicker";
+import { EVENT_TYPES } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Locations" };
 
 const ERRORS: Record<string, string> = {
-  missing: "Give the location a name and an end time.",
+  missing: "Give the location a name, an event type and an end time.",
   past: "The end time has to be in the future.",
 };
 
@@ -51,6 +53,7 @@ export default async function AdminHome({ searchParams }: { searchParams: { erro
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="truncate font-semibold">{l.name}</span>
                           <StatusPill tone={state}>{state === "live" ? "Live" : state === "scheduled" ? "Scheduled" : "Ended"}</StatusPill>
+                          <StatusPill tone="muted">{EVENT_TYPES[l.eventType].label}</StatusPill>
                         </div>
                         <p className="mt-0.5 truncate text-sm text-haze-500">
                           {l.venue || "No venue set"} · {state === "ended" ? "ended" : "ends"} <LocalTime iso={l.endedAt ?? l.endsAt} />
@@ -80,6 +83,7 @@ export default async function AdminHome({ searchParams }: { searchParams: { erro
               <span className="label">Venue / address</span>
               <input name="venue" className="input" placeholder="PHD Terrace, Dream Midtown" maxLength={120} />
             </label>
+            <EventTypePicker />
             <DateTimeField name="startsAt" label="Starts (optional)" />
             <DateTimeField name="endsAt" label="Ends (data is deleted at this time)" required />
             <button className="btn-primary w-full">Create & generate QR</button>

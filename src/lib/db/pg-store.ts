@@ -4,7 +4,7 @@
  * with no public policies, so the Supabase anon key can never read profiles.
  */
 import { Pool } from "pg";
-import type { Location, Profile, ProfileStatus } from "../types";
+import { EMPTY_FIELDS, type Location, type Profile, type ProfileStatus } from "../types";
 import type { Store } from "../store";
 
 const g = globalThis as unknown as { __friesPool?: Pool };
@@ -26,7 +26,10 @@ function pool(): Pool {
 
 // Additive, idempotent schema changes applied on first use, so a deploy never runs ahead of the
 // database. They mirror supabase/migrations; anything destructive belongs there, not here.
-const ENSURE_SCHEMA = ["alter table profiles add column if not exists transcript text"];
+const ENSURE_SCHEMA = [
+  "alter table profiles add column if not exists transcript text",
+  "alter table locations add column if not exists event_type text not null default 'social'",
+];
 let schemaReady: Promise<void> | null = null;
 
 function ensureSchema(): Promise<void> {
@@ -52,6 +55,7 @@ function toLocation(r: any): Location {
     code: r.code,
     name: r.name,
     venue: r.venue,
+    eventType: r.event_type ?? "social",
     startsAt: iso(r.starts_at),
     endsAt: iso(r.ends_at)!,
     endedAt: iso(r.ended_at),
@@ -64,7 +68,7 @@ function toProfile(r: any): Profile {
     id: r.id,
     locationId: r.location_id,
     status: r.status,
-    fields: r.fields,
+    fields: { ...EMPTY_FIELDS, ...r.fields },
     extracted: r.extracted,
     photo: r.photo,
     videoKey: r.video_key,
@@ -77,7 +81,7 @@ function toProfile(r: any): Profile {
 }
 
 const LOC_COLS: Record<string, string> = {
-  name: "name", venue: "venue", startsAt: "starts_at", endsAt: "ends_at", endedAt: "ended_at", createdAt: "created_at",
+  name: "name", venue: "venue", eventType: "event_type", startsAt: "starts_at", endsAt: "ends_at", endedAt: "ended_at", createdAt: "created_at",
 };
 const PROF_COLS: Record<string, string> = {
   status: "status", fields: "fields", extracted: "extracted", photo: "photo", videoKey: "video_key",
@@ -113,8 +117,8 @@ export const pgStore: Store = {
   },
   async insertLocation(l) {
     await q(
-      "insert into locations (id, code, name, venue, starts_at, ends_at, ended_at, created_at) values ($1,$2,$3,$4,$5,$6,$7,$8)",
-      [l.id, l.code, l.name, l.venue, l.startsAt, l.endsAt, l.endedAt, l.createdAt],
+      "insert into locations (id, code, name, venue, event_type, starts_at, ends_at, ended_at, created_at) values ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+      [l.id, l.code, l.name, l.venue, l.eventType, l.startsAt, l.endsAt, l.endedAt, l.createdAt],
     );
   },
   async updateLocation(id, patch) {

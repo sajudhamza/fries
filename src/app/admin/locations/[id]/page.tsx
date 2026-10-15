@@ -8,7 +8,8 @@ import { deleteLocation, endEventNow, updateLocation } from "@/lib/admin-actions
 import { ensureFresh } from "@/lib/lifecycle";
 import { isAdmin } from "@/lib/session";
 import { store } from "@/lib/store";
-import type { ProfileStatus } from "@/lib/types";
+import { EVENT_TYPES, GENDERS, INTERESTS, type ProfileStatus } from "@/lib/types";
+import { EventTypePicker } from "@/components/EventTypePicker";
 import { joinUrl } from "@/lib/urls";
 import { locationState } from "@/lib/util";
 
@@ -42,6 +43,7 @@ export default async function LocationAdmin({ params, searchParams }: { params: 
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <h1 className="font-display text-3xl font-bold">{loc.name}</h1>
           <StatusPill tone={state}>{state === "live" ? "Live" : state === "scheduled" ? "Scheduled" : "Ended"}</StatusPill>
+          <StatusPill tone="muted">{EVENT_TYPES[loc.eventType].label} event</StatusPill>
         </div>
         <p className="mt-1 text-sm text-haze-300">
           {loc.venue || "No venue set"} · {state === "ended" ? <>ended <LocalTime iso={loc.endedAt ?? loc.endsAt} /></> : <>data deletes <LocalTime iso={loc.endsAt} /> (<LocalTime iso={loc.endsAt} mode="relative" />)</>}
@@ -83,7 +85,14 @@ export default async function LocationAdmin({ params, searchParams }: { params: 
                 <ul className="mt-3 divide-y divide-white/5">
                   {profiles.map((p) => (
                     <li key={p.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                      <span className="truncate">{p.fields.name || <span className="text-haze-500">Unnamed</span>}</span>
+                      <span className="truncate">
+                        {p.fields.name || <span className="text-haze-500">Unnamed</span>}
+                        {loc.eventType === "matchmaking" && p.fields.gender && (
+                          <span className="ml-2 text-xs text-haze-500">
+                            {GENDERS[p.fields.gender]}{p.fields.interestedIn ? `, into ${INTERESTS[p.fields.interestedIn].toLowerCase()}` : ""}
+                          </span>
+                        )}
+                      </span>
                       <span className="flex shrink-0 items-center gap-3 text-haze-500">
                         <StatusPill tone={p.status === "live" ? "live" : "muted"}>{STATUS_LABEL[p.status]}</StatusPill>
                         <LocalTime iso={p.createdAt} mode="time" />
@@ -104,6 +113,12 @@ export default async function LocationAdmin({ params, searchParams }: { params: 
                 <span className="label">Venue / address</span>
                 <input name="venue" className="input" defaultValue={loc.venue} maxLength={120} />
               </label>
+              <div className="sm:col-span-2">
+                <EventTypePicker defaultValue={loc.eventType} />
+                {loc.eventType !== "matchmaking" && (
+                  <p className="mt-2 text-xs text-haze-500">Switching to Matchmaking mid-event asks guests who are already live to add their preferences before they can keep browsing.</p>
+                )}
+              </div>
               <DateTimeField name="startsAt" label="Starts (optional)" defaultValue={loc.startsAt} />
               <DateTimeField name="endsAt" label="Ends (data is deleted at this time)" defaultValue={loc.endsAt} required />
               <div className="sm:col-span-2">

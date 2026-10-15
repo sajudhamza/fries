@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { PublicShell } from "../PublicShell";
 import { ConfirmSubmit } from "@/components/client";
 import { Avatar, Notice } from "@/components/ui";
+import { MatchPrefs } from "@/components/MatchPrefs";
 import { loadAttendee } from "@/lib/attendee";
 import { leaveLocation, saveProfile } from "@/lib/join-actions";
 import type { ProfileFields } from "@/lib/types";
@@ -9,7 +10,7 @@ import type { ProfileFields } from "@/lib/types";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Your profile" };
 
-export default async function MePage({ params, searchParams }: { params: { code: string }; searchParams: { error?: string } }) {
+export default async function MePage({ params, searchParams }: { params: { code: string }; searchParams: { error?: string; prefs?: string } }) {
   const { loc, me } = await loadAttendee(params.code);
   if (loc.endedAt || !me) redirect(`/l/${params.code}`);
   if (me.status === "awaiting_video" || me.status === "processing") redirect(`/l/${params.code}/video`);
@@ -30,6 +31,9 @@ export default async function MePage({ params, searchParams }: { params: { code:
 
       <form action={saveProfile.bind(null, loc.code)} className="mt-6 space-y-4">
         {searchParams.error === "name" && <Notice tone="error">Add your name so people know who you are.</Notice>}
+        {searchParams.error === "prefs" && <Notice tone="error">Tell us who you are and who you&apos;d like to see.</Notice>}
+        {searchParams.prefs && <Notice>The host made this a matchmaking event. Add your preferences below to keep browsing.</Notice>}
+        {loc.eventType === "matchmaking" && <MatchPrefs gender={f.gender} interestedIn={f.interestedIn} />}
 
         <div className="grid grid-cols-[110px_1fr] items-end gap-4">
           <Avatar name={f.name} photo={me.photo} />

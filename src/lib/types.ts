@@ -3,12 +3,22 @@
  * ever see other attendees of that same location. When the event ends every profile and video in
  * the bucket is deleted; the location itself stays so the venue can be reopened for the next event.
  */
+export type EventType = "business" | "matchmaking" | "social";
+
+export const EVENT_TYPES: Record<EventType, { label: string; blurb: string }> = {
+  social: { label: "Social", blurb: "Everyone at the event can see every profile." },
+  business: { label: "Business", blurb: "Networking. Everyone can see every profile, no dating preferences asked." },
+  matchmaking: { label: "Matchmaking", blurb: "Guests say who they're interested in and only see matching profiles." },
+};
+
 export interface Location {
   id: string;
   /** Unguessable public code embedded in the QR URL (/l/<code>). */
   code: string;
   name: string;
   venue: string;
+  /** Decides who sees whom. Locations created before event types existed are "social". */
+  eventType: EventType;
   startsAt: string | null;
   endsAt: string;
   /** Set when the event was closed and its data purged. Null = open. */
@@ -31,7 +41,16 @@ export interface ProfileFields {
   bio: string;
   hobbies: string[];
   lookingFor: string;
+  /** Matchmaking events only: the guest's own gender and who they want to see. */
+  gender: Gender | "";
+  interestedIn: Interest | "";
 }
+
+export type Gender = "man" | "woman" | "nonbinary";
+export type Interest = "men" | "women" | "everyone";
+
+export const GENDERS: Record<Gender, string> = { man: "Man", woman: "Woman", nonbinary: "Non-binary" };
+export const INTERESTS: Record<Interest, string> = { men: "Men", women: "Women", everyone: "Everyone" };
 
 export interface Profile {
   id: string;
@@ -60,6 +79,8 @@ export const EMPTY_FIELDS: ProfileFields = {
   bio: "",
   hobbies: [],
   lookingFor: "",
+  gender: "",
+  interestedIn: "",
 };
 
 export const VIDEO_MIN_SECONDS = 60;

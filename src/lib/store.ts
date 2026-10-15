@@ -5,7 +5,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import type { Location, Profile, ProfileStatus } from "./types";
+import { EMPTY_FIELDS, type Location, type Profile, type ProfileStatus } from "./types";
 
 export interface Store {
   listLocations(): Promise<Location[]>;
@@ -37,7 +37,10 @@ const DB_FILE = path.join(DATA_DIR, "db.json");
 
 function readDb(): FileDb {
   try {
-    return JSON.parse(fs.readFileSync(DB_FILE, "utf8")) as FileDb;
+    const db = JSON.parse(fs.readFileSync(DB_FILE, "utf8")) as FileDb;
+    for (const l of db.locations) l.eventType ??= "social";
+    for (const p of db.profiles) p.fields = { ...EMPTY_FIELDS, ...p.fields };
+    return db;
   } catch {
     return { locations: [], profiles: [] };
   }

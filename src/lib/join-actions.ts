@@ -9,8 +9,8 @@ import { videoStorage, type UploadTarget } from "./video-storage";
 import { clearAttendeeSession, setAttendeeSession } from "./session";
 import { newId, nowIso } from "./util";
 import {
-  EMPTY_FIELDS, VIDEO_MAX_BYTES, VIDEO_MAX_SECONDS, VIDEO_MIN_SECONDS,
-  type Location, type Profile, type ProfileFields,
+  EMPTY_FIELDS, GENDERS, INTERESTS, VIDEO_MAX_BYTES, VIDEO_MAX_SECONDS, VIDEO_MIN_SECONDS,
+  type Gender, type Interest, type Location, type Profile, type ProfileFields,
 } from "./types";
 
 function assertOpen(loc: Location) {
@@ -114,8 +114,11 @@ function clip(v: FormDataEntryValue | null, max: number): string {
 }
 
 export async function saveProfile(code: string, formData: FormData) {
-  const { me } = await requireMe(code);
+  const { loc, me } = await requireMe(code);
   if (me.status === "awaiting_video" || me.status === "processing") redirect(`/l/${code}/video`);
+  const gender = String(formData.get("gender") ?? "");
+  const interestedIn = String(formData.get("interestedIn") ?? "");
+  const matchmaking = loc.eventType === "matchmaking";
   const ageRaw = Number(clip(formData.get("age"), 3));
   const fields: ProfileFields = {
     name: clip(formData.get("name"), 60),
@@ -126,8 +129,12 @@ export async function saveProfile(code: string, formData: FormData) {
     bio: clip(formData.get("bio"), 600),
     hobbies: clip(formData.get("hobbies"), 400).split(",").map((h) => h.trim()).filter(Boolean).slice(0, 12),
     lookingFor: clip(formData.get("lookingFor"), 300),
+    // Only stored for matchmaking events; other event types never ask.
+    gender: matchmaking && gender in GENDERS ? (gender as Gender) : "",
+    interestedIn: matchmaking && interestedIn in INTERESTS ? (interestedIn as Interest) : "",
   };
   if (!fields.name) redirect(`/l/${code}/me?error=name`);
+  if (matchmaking && (!fields.gender || !fields.interestedIn)) redirect(`/l/${code}/me?error=prefs`);
   const removePhoto = formData.get("removePhoto") === "on";
   await (await store()).updateProfile(me.id, {
     fields,

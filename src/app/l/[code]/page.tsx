@@ -40,7 +40,11 @@ export default async function JoinPage({ params, searchParams }: { params: { cod
         {[
           ["Record your intro", "Name, what you do, what you love, what you're looking for."],
           ["Check your profile", "We fill it in from your video. You fix anything we got wrong."],
-          ["Meet people here", "Only people who scanned this same code can see you."],
+          loc.eventType === "matchmaking"
+            ? ["See your matches", "Say who you're interested in. Only people at this event who match see each other."]
+            : loc.eventType === "business"
+              ? ["Meet people here", "Everyone who scanned this code can see each other's profiles. Great for networking."]
+              : ["Meet people here", "Only people who scanned this same code can see you."],
         ].map(([t, d], i) => (
           <li key={t} className="card flex gap-4 p-4">
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-rose-500/15 font-semibold text-rose-300">{i + 1}</span>

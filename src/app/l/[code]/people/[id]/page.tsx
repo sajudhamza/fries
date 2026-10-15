@@ -4,6 +4,7 @@ import { PublicShell } from "../../PublicShell";
 import { Avatar } from "@/components/ui";
 import { loadAttendee } from "@/lib/attendee";
 import { store } from "@/lib/store";
+import { canSee } from "@/lib/visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export default async function PersonPage({ params }: { params: { code: string; i
 
   const p = await (await store()).getProfile(params.id);
   // Strict bucket boundary: a profile from any other location is indistinguishable from a missing one.
-  if (!p || p.locationId !== loc.id || p.status !== "live") notFound();
+  if (!p || p.locationId !== loc.id || p.status !== "live" || !canSee(loc, me, p)) notFound();
   const f = p.fields;
   const facts = [f.height && `${f.height}`, f.pronouns, f.occupation].filter(Boolean) as string[];
 
