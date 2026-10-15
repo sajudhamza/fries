@@ -26,6 +26,13 @@ export async function POST(req: NextRequest) {
 
   console.log(`[worker] result for ${me.id}: ok=${body.ok} timings=${JSON.stringify(body.timings ?? {})}${body.error ? ` error=${body.error}` : ""}`);
   const transcript = typeof body.transcript === "string" ? body.transcript.slice(0, 20_000) : null;
-  await completeProcessing(me, body.ok ? sanitizeFields(body.fields) : {}, transcript);
+  const found = body.ok ? sanitizeFields(body.fields) : {};
+  // Gender and interest only mean something at matchmaking events; never store them otherwise.
+  const loc = await (await store()).getLocation(me.locationId);
+  if (loc?.eventType !== "matchmaking") {
+    delete found.gender;
+    delete found.interestedIn;
+  }
+  await completeProcessing(me, found, transcript);
   return NextResponse.json({ ok: true });
 }

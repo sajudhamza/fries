@@ -178,3 +178,45 @@ def support(phrase: str, source_stems: set[str]) -> float:
 
 def split_sentences(text: str) -> list[str]:
     return [s.strip() for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s.strip()]
+
+
+# --- matchmaking: gender and who they're interested in ----------------------------------------
+# Only explicit self-descriptions count ("I'm a guy", "as a woman"). Never inferred from voice or looks.
+
+_MAN = r"(?:man|guy|dude|gentleman|bloke|male)"
+_WOMAN = r"(?:woman|girl|gal|lady|female)"
+
+
+def find_gender(text: str) -> str | None:
+    t = text.lower()
+    if re.search(r"\b(?:i'm|i am|im)\s+(?:a\s+)?non[\s-]?binary\b|\bas a non[\s-]?binary\b|\bi'm enby\b", t):
+        return "nonbinary"
+    lead = r"\b(?:i'm|i am|im)\s+(?:a|an)\s+(?:[\w-]+\s+){0,3}?|\bas\s+a\s+(?:\w+\s+){0,1}?"
+    m = re.search(rf"(?:{lead})(?P<g>{_MAN}|{_WOMAN})\b(?!\s*of\b)", t)
+    if not m:
+        return None
+    return "man" if re.fullmatch(_MAN, m.group("g")) else "woman"
+
+
+_INTO_MEN = r"(?:men|guys|guy|a guy|a man|man|dudes|boyfriend|a boyfriend|husband|a husband|gentlemen|a gentleman)"
+_INTO_WOMEN = r"(?:women|girls|girl|a girl|a woman|woman|ladies|a lady|girlfriend|a girlfriend|wife|a wife)"
+_INTO_ALL = r"(?:anyone|everyone|either|both|all genders|any gender|men (?:or|and) women|women (?:or|and) men|guys (?:or|and) girls|girls (?:or|and) guys)"
+
+
+def find_interest(text: str) -> str | None:
+    t = text.lower()
+    lead = (
+        r"\b(?:looking for|hoping to meet|want to meet|wanna meet|hoping to find|interested in|into|attracted to|"
+        r"date|dating|i like|searching for)\s+(?:(?:a|some|the|nice|cool|cute|kind|fun|new|great|special)\s+){0,2}"
+    )
+    if re.search(lead + _INTO_ALL + r"\b", t) or re.search(r"\b(?:i'm |i am )?bi(?:sexual)?\b", t):
+        return "everyone"
+    men = re.search(lead + _INTO_MEN + r"\b", t)
+    women = re.search(lead + _INTO_WOMEN + r"\b", t)
+    if men and women:
+        return "everyone"
+    if men:
+        return "men"
+    if women:
+        return "women"
+    return None

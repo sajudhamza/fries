@@ -10,7 +10,7 @@ import { clearAttendeeSession, setAttendeeSession } from "./session";
 import { newId, nowIso } from "./util";
 import {
   EMPTY_FIELDS, GENDERS, INTERESTS, VIDEO_MAX_BYTES, VIDEO_MAX_SECONDS, VIDEO_MIN_SECONDS,
-  type Gender, type Interest, type Location, type Profile, type ProfileFields,
+  profileFieldsFor, type FieldKey, type Gender, type Interest, type Location, type Profile, type ProfileFields,
 } from "./types";
 
 function assertOpen(loc: Location) {
@@ -98,13 +98,19 @@ export async function finishUpload(
  * Polled by the browser while the worker builds the profile. Once the worker reports back the
  * profile is in "review". If it never does, the guest is moved on to fill the form by hand.
  */
-export async function checkProcessing(code: string): Promise<{ done: false } | { done: true; next: string }> {
-  const { me } = await requireMe(code);
-  if (me.status !== "processing") return { done: true, next: nextStep(code, me) };
+export async function checkProcessing(
+  code: string,
+): Promise<{ done: false } | { done: true; next: string; filled: FieldKey[] }> {
+  const { loc, me } = await requireMe(code);
+  if (me.status !== "processing") {
+    // Which of this event's fields the video filled in, for the checklist shown before the form.
+    const keys = new Set(profileFieldsFor(loc.eventType).map((f) => f.key));
+    return { done: true, next: nextStep(code, me), filled: me.extracted.filter((k) => keys.has(k)) };
+  }
   if (Date.now() - new Date(me.updatedAt).getTime() > WORKER_TIMEOUT_MS) {
     console.warn(`[checkProcessing] worker timed out for ${me.id}; falling back to manual form`);
     await completeProcessing(me, {}, null);
-    return { done: true, next: `/l/${code}/me` };
+    return { done: true, next: `/l/${code}/me`, filled: [] };
   }
   return { done: false };
 }

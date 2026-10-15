@@ -1,6 +1,6 @@
 import { store } from "./store";
 import { nowIso } from "./util";
-import type { Profile, ProfileFields } from "./types";
+import { GENDERS, INTERESTS, type Gender, type Interest, type Profile, type ProfileFields } from "./types";
 
 /** Merges extracted fields into a profile and moves it to review. Empty values are ignored. */
 export async function completeProcessing(me: Profile, found: Partial<ProfileFields>, transcript: string | null) {
@@ -28,5 +28,7 @@ export function sanitizeFields(raw: unknown): Partial<ProfileFields> {
     bio: str(r.bio, 600),
     hobbies: Array.isArray(r.hobbies) ? r.hobbies.map((h) => str(h, 40)).filter(Boolean).slice(0, 8) : [],
     lookingFor: str(r.lookingFor, 300),
+    gender: typeof r.gender === "string" && r.gender in GENDERS ? (r.gender as Gender) : "",
+    interestedIn: typeof r.interestedIn === "string" && r.interestedIn in INTERESTS ? (r.interestedIn as Interest) : "",
   };
 }

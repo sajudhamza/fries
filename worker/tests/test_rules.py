@@ -3,7 +3,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
-from rules import find_age, find_height, find_name, find_pronouns, support, content_stems  # noqa: E402
+from rules import find_age, find_gender, find_height, find_interest, find_name, find_pronouns, support, content_stems  # noqa: E402
 
 AGE = [
     ("Hey, I'm Maya, I'm 29, about five seven", 29),
@@ -43,10 +43,32 @@ NAMES = [
     ("I'm so happy to be here", None),
 ]
 
+GENDER = [
+    ("I'm a 29 year old guy from Boston", "man"),
+    ("As a woman in tech I love meetups", "woman"),
+    ("As a woman who just moved here, I'm still meeting people", "woman"),
+    ("I'm a guy who loves cooking", "man"),
+    ("I'm a pretty chill dude", "man"),
+    ("I'm non-binary and I love art", "nonbinary"),
+    ("I'm a product designer", None),
+    ("I'm a big fan of jazz", None),
+    ("My sister is a woman of many talents", None),
+]
+INTEREST = [
+    ("Tonight I'm hoping to meet a nice guy", "men"),
+    ("I'm looking for a girlfriend honestly", "women"),
+    ("I'm into women", "women"),
+    ("looking for men or women, I'm open", "everyone"),
+    ("I'm bi so anyone really", "everyone"),
+    ("I'm hoping to meet new friends", None),
+    ("I'm looking for a dance partner", None),
+]
+
 
 def test_all():
     failures = []
-    for fn, cases in ((find_age, AGE), (find_height, HEIGHT), (find_pronouns, PRONOUNS), (find_name, NAMES)):
+    for fn, cases in ((find_age, AGE), (find_height, HEIGHT), (find_pronouns, PRONOUNS), (find_name, NAMES),
+                      (find_gender, GENDER), (find_interest, INTEREST)):
         for text, want in cases:
             got = fn(text)
             if got != want:

@@ -4,24 +4,16 @@ import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { checkProcessing, finishUpload, requestUpload } from "@/lib/join-actions";
-import { VIDEO_MAX_BYTES, VIDEO_MAX_SECONDS, VIDEO_MIN_SECONDS } from "@/lib/types";
+import { VIDEO_MAX_BYTES, VIDEO_MAX_SECONDS, VIDEO_MIN_SECONDS, type FieldKey, type FieldMeta } from "@/lib/types";
 
 type Phase = "choose" | "recording" | "uploading" | "processing" | "failed";
-type Step = "upload" | "listen" | "extract";
+type Step = "upload" | "listen" | "extract" | "done";
 
 interface Clip {
   blob: Blob;
   seconds: number;
   photo: string | null;
 }
-
-const PROMPTS = [
-  "Your first name and age",
-  "Your height",
-  "What you do",
-  "Hobbies & what you love doing",
-  "What you're looking for tonight",
-];
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
@@ -78,13 +70,16 @@ function inspectFile(file: File): Promise<{ seconds: number; photo: string | nul
   });
 }
 
-export function VideoCapture({ code, resume = false }: { code: string; resume?: boolean }) {
+export function VideoCapture({ code, fields, resume = false }: { code: string; fields: FieldMeta[]; resume?: boolean }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>(resume ? "processing" : "choose");
   const [step, setStep] = useState<Step>(resume ? "listen" : "upload");
   const [error, setError] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [progress, setProgress] = useState(0);
+  // Set when processing finishes: which fields the video filled in, revealed one tick at a time.
+  const [result, setResult] = useState<{ filled: FieldKey[]; next: string } | null>(null);
+  const [revealed, setRevealed] = useState(0);
 
   const clipRef = useRef<Clip | null>(null);
   const liveRef = useRef<HTMLVideoElement>(null);
@@ -95,6 +90,17 @@ export function VideoCapture({ code, resume = false }: { code: string; resume?: 
   const startedAtRef = useRef(0);
 
   useEffect(() => () => stopStream(), []);
+
+  // Tick the checklist off field by field, then move on to the form.
+  useEffect(() => {
+    if (!result) return;
+    if (revealed < fields.length) {
+      const t = setTimeout(() => setRevealed((n) => n + 1), 220);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => router.push(result.next), 1800);
+    return () => clearTimeout(t);
+  }, [result, revealed, fields.length, router]);
 
   // Came back mid-processing (refresh, closed tab): pick up where the server left off.
   useEffect(() => {
@@ -229,7 +235,11 @@ export function VideoCapture({ code, resume = false }: { code: string; resume?: 
     for (;;) {
       try {
         const r = await checkProcessing(code);
-        if (r.done) return router.push(r.next);
+        if (r.done) {
+          setStep("done");
+          setRevealed(0);
+          return setResult({ filled: r.filled, next: r.next });
+        }
       } catch {
         /* transient network error: keep polling */
       }
@@ -253,25 +263,36 @@ export function VideoCapture({ code, resume = false }: { code: string; resume?: 
             <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-sm font-semibold">
               <span className="h-2 w-2 animate-pulse rounded-full bg-rose-500" /> {fmt(elapsed)} / {fmt(VIDEO_MAX_SECONDS)}
             </div>
-            <ul className="absolute inset-x-3 bottom-3 space-y-1 rounded-2xl bg-black/55 p-3 text-sm backdrop-blur">
-              {PROMPTS.map((p, i) => (
-                <li key={p} className={clsx("transition", elapsed > i * 8 ? "text-white" : "text-white/40")}>• {p}</li>
-              ))}
-            </ul>
+            <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-black/60 p-3 backdrop-blur">
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/60">Try to mention</p>
+              <ul className="flex flex-wrap gap-1.5">
+                {fields.map((f, i) => (
+                  <li
+                    key={f.key}
+                    className={clsx(
+                      "rounded-full px-2.5 py-1 text-xs transition",
+                      elapsed > i * (VIDEO_MAX_SECONDS / fields.length / 1.5) ? "bg-white/20 text-white" : "bg-white/5 text-white/50",
+                    )}
+                  >
+                    {f.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </>
         )}
 
         {(phase === "choose" || phase === "failed") && (
-          <div className="flex h-full flex-col justify-center gap-4 p-6">
+          <div className="flex h-full flex-col justify-center gap-3 overflow-y-auto p-6">
             <p className="font-display text-2xl font-bold">Say hi in {VIDEO_MIN_SECONDS} to {VIDEO_MAX_SECONDS} seconds</p>
-            <p className="text-sm text-haze-300">We&apos;ll build your profile from what you say, so try to mention:</p>
-            <ul className="space-y-1.5 text-sm">
-              {PROMPTS.map((p) => <li key={p} className="flex gap-2"><span className="text-rose-400">✓</span>{p}</li>)}
+            <p className="text-sm text-haze-300">We fill in your profile from what you say. Try to mention:</p>
+            <ul className="space-y-1 text-sm">
+              {fields.map((f) => <li key={f.key} className="flex gap-2"><span className="text-rose-400">•</span>{f.clue}</li>)}
             </ul>
           </div>
         )}
 
-        {busy && <ProcessingView step={step} progress={progress} />}
+        {busy && <ProcessingView step={step} progress={progress} fields={fields} filled={result?.filled ?? null} revealed={revealed} />}
       </div>
 
       {error && <p role="alert" className="mx-auto max-w-sm rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</p>}
@@ -300,50 +321,77 @@ export function VideoCapture({ code, resume = false }: { code: string; resume?: 
             <button className="btn-ghost" onClick={() => { clipRef.current = null; setError(null); setPhase("choose"); }}>Record a new one</button>
           </>
         )}
-        {busy && <p className="text-center text-xs text-haze-500">Keep this page open. This usually takes under a minute.</p>}
+        {busy && !result && <p className="text-center text-xs text-haze-500">Keep this page open. This usually takes under a minute.</p>}
+        {result && revealed >= fields.length && (
+          <button className="btn-primary py-3.5 text-base" onClick={() => router.push(result.next)}>Continue</button>
+        )}
       </div>
     </div>
   );
 }
 
-const STEPS: { key: Step; label: string }[] = [
-  { key: "upload", label: "Uploading your intro" },
-  { key: "listen", label: "Listening to what you said" },
-  { key: "extract", label: "Filling in your profile" },
+const STEPS: { key: Exclude<Step, "done">; label: string }[] = [
+  { key: "upload", label: "Uploading" },
+  { key: "listen", label: "Listening" },
+  { key: "extract", label: "Reading details" },
 ];
 
-function ProcessingView({ step, progress }: { step: Step; progress: number }) {
-  const current = STEPS.findIndex((s) => s.key === step);
+function ProcessingView({
+  step, progress, fields, filled, revealed,
+}: { step: Step; progress: number; fields: FieldMeta[]; filled: FieldKey[] | null; revealed: number }) {
+  const done = filled !== null;
+  const current = done ? STEPS.length : STEPS.findIndex((s) => s.key === step);
+  const filledCount = filled ? fields.filter((f) => filled.includes(f.key)).length : 0;
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-7 bg-night-900 p-6" aria-live="polite">
-      <div className="relative h-20 w-20">
-        <div className="absolute inset-0 rounded-full border-4 border-white/10" />
-        <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-rose-500" />
-        {step === "upload" && (
-          <span className="absolute inset-0 grid place-items-center text-sm font-semibold">{Math.round(progress * 100)}%</span>
-        )}
+    <div className="absolute inset-0 flex flex-col gap-4 overflow-y-auto bg-night-900 p-5" aria-live="polite">
+      <div className="flex items-center gap-3">
+        <div className="relative h-10 w-10 shrink-0">
+          <div className="absolute inset-0 rounded-full border-[3px] border-white/10" />
+          {done ? (
+            <span className="absolute inset-0 grid place-items-center rounded-full bg-emerald-400/20 text-lg text-emerald-300">✓</span>
+          ) : (
+            <div className="absolute inset-0 animate-spin rounded-full border-[3px] border-transparent border-t-rose-500" />
+          )}
+        </div>
+        <div>
+          <p className="font-display text-lg font-bold leading-tight">{done ? "Your profile is ready" : "Processing your intro"}</p>
+          <p className="text-xs text-haze-300">
+            {!done && step === "upload" ? `Uploading ${Math.round(progress * 100)}%` : done ? `${filledCount} of ${fields.length} filled from your video` : "Hang tight, this takes a moment."}
+          </p>
+        </div>
       </div>
-      <div className="text-center">
-        <p className="font-display text-xl font-bold">Processing your intro</p>
-        <p className="mt-1 text-sm text-haze-300">Hang tight, your profile is almost ready.</p>
-      </div>
-      <ol className="w-full max-w-[15rem] space-y-2.5 text-sm">
+
+      <ol className="flex gap-1.5">
         {STEPS.map((s, i) => (
-          <li key={s.key} className={clsx("flex items-center gap-3", i > current && "text-haze-500")}>
-            <span
-              className={clsx(
-                "grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] font-bold",
-                i < current && "bg-emerald-400/20 text-emerald-300",
-                i === current && "bg-rose-500/20 text-rose-300",
-                i > current && "bg-white/5",
-              )}
-            >
-              {i < current ? "✓" : i === current ? <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-rose-400" /> : ""}
-            </span>
-            {s.label}
+          <li key={s.key} className="flex-1">
+            <div className={clsx("h-1 rounded-full", i < current ? "bg-emerald-400/70" : i === current ? "animate-pulse bg-rose-500" : "bg-white/10")} />
+            <p className={clsx("mt-1 text-[11px]", i <= current ? "text-haze-300" : "text-haze-500")}>{s.label}</p>
           </li>
         ))}
       </ol>
+
+      <ul className="space-y-1.5 text-sm">
+        {fields.map((f, i) => {
+          const shown = done && i < revealed;
+          const ok = shown && filled!.includes(f.key);
+          return (
+            <li key={f.key} className="flex items-center gap-2.5">
+              <span
+                className={clsx(
+                  "grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] font-bold transition",
+                  ok && "bg-emerald-400/20 text-emerald-300",
+                  shown && !ok && "bg-white/5 text-haze-500",
+                  !shown && "bg-white/5",
+                )}
+              >
+                {ok ? "✓" : shown ? "–" : <span className={clsx("h-1.5 w-1.5 rounded-full bg-white/25", !done && "animate-pulse")} />}
+              </span>
+              <span className={clsx(ok ? "text-white" : shown ? "text-haze-500" : "text-haze-300")}>{f.label}</span>
+              {shown && !ok && <span className="ml-auto text-[11px] text-haze-500">add next</span>}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

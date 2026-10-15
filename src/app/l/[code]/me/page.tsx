@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { PublicShell } from "../PublicShell";
 import { ConfirmSubmit } from "@/components/client";
 import { Avatar, Notice } from "@/components/ui";
-import { MatchPrefs } from "@/components/MatchPrefs";
+import { GENDERS, INTERESTS, type Gender, type Interest } from "@/lib/types";
 import { loadAttendee } from "@/lib/attendee";
 import { leaveLocation, saveProfile } from "@/lib/join-actions";
 import type { ProfileFields } from "@/lib/types";
@@ -19,6 +19,7 @@ export default async function MePage({ params, searchParams }: { params: { code:
   const fromVideo = (k: keyof ProfileFields) =>
     me.extracted.includes(k) ? <span className="ml-2 normal-case tracking-normal text-rose-300">from your video</span> : null;
   const isLive = me.status === "live";
+  const matchmaking = loc.eventType === "matchmaking";
 
   return (
     <PublicShell loc={loc}>
@@ -33,7 +34,6 @@ export default async function MePage({ params, searchParams }: { params: { code:
         {searchParams.error === "name" && <Notice tone="error">Add your name so people know who you are.</Notice>}
         {searchParams.error === "prefs" && <Notice tone="error">Tell us who you are and who you&apos;d like to see.</Notice>}
         {searchParams.prefs && <Notice>The host made this a matchmaking event. Add your preferences below to keep browsing.</Notice>}
-        {loc.eventType === "matchmaking" && <MatchPrefs gender={f.gender} interestedIn={f.interestedIn} />}
 
         <div className="grid grid-cols-[110px_1fr] items-end gap-4">
           <Avatar name={f.name} photo={me.photo} />
@@ -66,6 +66,25 @@ export default async function MePage({ params, searchParams }: { params: { code:
             <input name="pronouns" className="input" defaultValue={f.pronouns} placeholder="optional" maxLength={30} />
           </label>
         </div>
+        {matchmaking && (
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="label">I am{fromVideo("gender")}</span>
+              <select name="gender" className="input" defaultValue={f.gender} required>
+                <option value="" disabled>Choose…</option>
+                {(Object.keys(GENDERS) as Gender[]).map((g) => <option key={g} value={g}>{GENDERS[g]}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="label">Looking for{fromVideo("interestedIn")}</span>
+              <select name="interestedIn" className="input" defaultValue={f.interestedIn} required>
+                <option value="" disabled>Choose…</option>
+                {(Object.keys(INTERESTS) as Interest[]).map((i) => <option key={i} value={i}>{INTERESTS[i]}</option>)}
+              </select>
+            </label>
+            <p className="col-span-2 -mt-1 text-xs text-haze-500">You&apos;ll only see people you&apos;re interested in who are also interested in you.</p>
+          </div>
+        )}
         <label className="block">
           <span className="label">What you do{fromVideo("occupation")}</span>
           <input name="occupation" className="input" defaultValue={f.occupation} maxLength={80} />
@@ -79,10 +98,19 @@ export default async function MePage({ params, searchParams }: { params: { code:
           <input name="hobbies" className="input" defaultValue={f.hobbies.join(", ")} placeholder="climbing, vinyl, natural wine" maxLength={400} />
           <span className="mt-1 block text-xs text-haze-500">Separate with commas</span>
         </label>
-        <label className="block">
-          <span className="label">Looking for{fromVideo("lookingFor")}</span>
-          <textarea name="lookingFor" rows={2} className="input" defaultValue={f.lookingFor} placeholder="New friends, a dance partner, maybe more" maxLength={300} />
-        </label>
+        {!matchmaking && (
+          <label className="block">
+            <span className="label">Looking for{fromVideo("lookingFor")}</span>
+            <textarea
+              name="lookingFor"
+              rows={2}
+              className="input"
+              defaultValue={f.lookingFor}
+              placeholder={loc.eventType === "business" ? "Co-founders, clients, people in fintech" : "New friends, a dance partner, maybe more"}
+              maxLength={300}
+            />
+          </label>
+        )}
 
         <button className="btn-primary w-full py-3.5 text-base">{isLive ? "Save" : "Go live"}</button>
       </form>

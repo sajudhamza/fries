@@ -83,6 +83,36 @@ export const EMPTY_FIELDS: ProfileFields = {
   interestedIn: "",
 };
 
+/**
+ * The profile fields guests are asked about, in form order. Drives the recording clues, the
+ * "filled from your video" checklist and the review form, so all three always match.
+ * Matchmaking events swap the free-text "looking for" for gender + interest dropdowns.
+ */
+export type FieldKey = keyof ProfileFields;
+
+export interface FieldMeta {
+  key: FieldKey;
+  label: string;
+  clue: string;
+}
+
+export function profileFieldsFor(eventType: EventType): FieldMeta[] {
+  const matchmaking = eventType === "matchmaking";
+  return [
+    { key: "name", label: "Name", clue: "Your first name" },
+    { key: "age", label: "Age", clue: "Your age" },
+    { key: "height", label: "Height", clue: "Your height" },
+    { key: "pronouns", label: "Pronouns", clue: "Your pronouns (optional)" },
+    ...(matchmaking ? [{ key: "gender" as const, label: "I am", clue: "Whether you're a man, woman or non-binary" }] : []),
+    { key: "occupation", label: "What you do", clue: "What you do for work" },
+    { key: "bio", label: "About you", clue: "A little about yourself" },
+    { key: "hobbies", label: "Hobbies", clue: "Your hobbies and interests" },
+    matchmaking
+      ? { key: "interestedIn", label: "Looking for", clue: "Who you're interested in: men, women or everyone" }
+      : { key: "lookingFor", label: "Looking for", clue: "What you're looking for tonight" },
+  ];
+}
+
 export const VIDEO_MIN_SECONDS = 15;
 export const VIDEO_MAX_SECONDS = 60;
 export const VIDEO_MAX_BYTES = 300 * 1024 * 1024;

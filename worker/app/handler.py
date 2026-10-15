@@ -159,6 +159,9 @@ def build_fields(transcript: str, llm: dict) -> dict:
         "bio": bio,
         "hobbies": hobbies[:8],
         "lookingFor": looking,
+        # Matchmaking dropdowns. The app ignores these for business and social events.
+        "gender": rules.find_gender(transcript) or "",
+        "interestedIn": rules.find_interest(transcript) or "",
     }
 
 
