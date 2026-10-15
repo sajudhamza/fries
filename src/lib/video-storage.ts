@@ -101,5 +101,8 @@ export function videoStorage(): VideoStorage {
   if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
     return supabaseStorage(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_VIDEO_BUCKET || "intro-videos");
   }
+  if (process.env.NODE_ENV === "production" && !process.env.FRIES_ALLOW_FILE_STORE) {
+    throw new Error("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not set. Local video storage only works in development.");
+  }
   return diskStorage;
 }

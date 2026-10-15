@@ -128,6 +128,9 @@ export async function store(): Promise<Store> {
     const { pgStore } = await import("./db/pg-store");
     cached = pgStore;
   } else {
+    if (process.env.NODE_ENV === "production" && !process.env.FRIES_ALLOW_FILE_STORE) {
+      throw new Error("DATABASE_URL is not set. The local file store only works in development.");
+    }
     cached = fileStore;
   }
   return cached;
