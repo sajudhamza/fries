@@ -34,7 +34,7 @@ src/lib/
   types.ts          Location (the QR bucket) and Profile
   store.ts          file store (.data/db.json) or Postgres when DATABASE_URL is set (db/pg-store.ts)
   video-storage.ts  local disk or private Supabase Storage bucket; browser uploads directly via signed URL
-  extract.ts        VIDEO -> PROFILE: Deepgram speech-to-text, then Claude fills ProfileFields from the transcript
+  worker.ts         dispatches videos to the self-hosted profile worker (worker/); results land in processing.ts
   lifecycle.ts      endEvent / purgeExpired: deletes every video + profile in a location
   session.ts        HMAC-signed cookies: admin, and one attendee cookie per location (path-scoped)
   admin-actions.ts  create / edit / end / delete locations
@@ -48,17 +48,16 @@ also delete their own profile and video at any time from `/l/:code/me`.
 **Bucket isolation.** An attendee's cookie is scoped to one location's path and names one profile. Every
 profile read checks `profile.locationId === location.id`; a profile from another location returns 404.
 
-## Video → profile extraction
+## Video → profile extraction (self-hosted)
 
-After upload the browser drives two short server steps (each well under serverless time limits):
+Extraction runs on our own worker in [`worker/`](worker/README.md), with open-source models only:
+faster-whisper for speech-to-text, rules for age/height/pronouns, and a local Qwen3.5-2B (llama.cpp) for
+job, hobbies, bio and what they're looking for, with a check that drops anything the person didn't say.
 
-1. **Transcribe**: Deepgram (`nova-3`) reads the video directly from a 15-minute signed storage URL.
-2. **Extract**: Claude (`claude-opus-5-5`, structured output) fills name, age, height, pronouns, occupation,
-   bio, hobbies and what they're looking for, using only what the person said. Unstated fields stay blank.
-
-The attendee then reviews the result (fields from the video are labelled) and goes live. Set
-`DEEPGRAM_API_KEY` and `ANTHROPIC_API_KEY` to turn it on; without them, or if either step fails, the
-attendee lands on the same form and fills it in by hand. Transcripts are deleted with the profile.
+The worker is an AWS Lambda container function invoked asynchronously after upload; it posts results to
+`/api/worker/result` (authenticated with a per-job token) while the guest's phone polls. Fields from the
+video are labelled on the review form. With no worker configured, or if it fails or takes over 8 minutes,
+the guest fills the form by hand. Transcripts are deleted with the profile.
 
 ## Production (Supabase + Amplify)
 

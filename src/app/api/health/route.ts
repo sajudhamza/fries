@@ -2,7 +2,9 @@
  * Deployment self-check. Reports which settings the server can see (true/false only, never values)
  * and whether the database and video bucket are reachable, so a misconfigured deploy is obvious.
  */
+import { GetFunctionConfigurationCommand } from "@aws-sdk/client-lambda";
 import { NextResponse } from "next/server";
+import { lambdaClient, workerMode } from "@/lib/worker";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,7 +12,7 @@ export const dynamic = "force-dynamic";
 const VARS = [
   "DATABASE_URL", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_VIDEO_BUCKET",
   "NEXT_PUBLIC_APP_URL", "SESSION_SECRET", "ADMIN_PASSWORD", "CRON_SECRET",
-  "DEEPGRAM_API_KEY", "ANTHROPIC_API_KEY",
+  "WORKER_LAMBDA_FUNCTION", "WORKER_AWS_REGION", "WORKER_URL", "WORKER_APP_URL",
 ] as const;
 
 function short(e: unknown): string {
@@ -52,5 +54,20 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ node: process.version, env, database, videoBucket });
+  // Profile worker (self-hosted video → profile extraction).
+  let worker: string = workerMode();
+  if (worker === "lambda") {
+    try {
+      const fn = await lambdaClient().send(new GetFunctionConfigurationCommand({ FunctionName: process.env.WORKER_LAMBDA_FUNCTION!.trim() }));
+      worker = `ok (lambda ${fn.FunctionName}, ${fn.State}, ${fn.MemorySize} MB, timeout ${fn.Timeout}s)`;
+    } catch (e) {
+      worker = `error: ${short(e)}`;
+    }
+  } else if (worker === "off") {
+    worker = "off (guests fill in profiles by hand): set WORKER_LAMBDA_FUNCTION";
+  } else {
+    worker = "url (local Docker worker)";
+  }
+
+  return NextResponse.json({ node: process.version, env, database, videoBucket, worker });
 }

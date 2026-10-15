@@ -3,7 +3,7 @@
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { finishUpload, processVideo, requestUpload } from "@/lib/join-actions";
+import { checkProcessing, finishUpload, requestUpload } from "@/lib/join-actions";
 import { VIDEO_MAX_BYTES, VIDEO_MAX_SECONDS, VIDEO_MIN_SECONDS } from "@/lib/types";
 
 type Phase = "choose" | "recording" | "ready" | "uploading" | "processing";
@@ -105,16 +105,18 @@ export function VideoCapture({ code, resume = false }: { code: string; resume?: 
   async function runProcessing() {
     setPhase("processing");
     setStep("listening");
-    for (let i = 0; i < 6; i++) {
+    const started = Date.now();
+    // The worker usually takes 30s to 2 min (longer on a cold start). Poll until it reports back.
+    for (;;) {
       try {
-        const r = await processVideo(code);
+        const r = await checkProcessing(code);
         if (r.done) return router.push(r.next);
-        setStep("writing");
       } catch {
-        await new Promise((res) => setTimeout(res, 1500));
+        /* transient network error: keep polling */
       }
+      if (Date.now() - started > 25_000) setStep("writing");
+      await new Promise((res) => setTimeout(res, 3000));
     }
-    router.refresh();
   }
 
   function stopStream() {

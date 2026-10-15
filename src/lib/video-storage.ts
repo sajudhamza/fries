@@ -15,15 +15,11 @@ export interface UploadTarget {
   headers: Record<string, string>;
 }
 
-export type VideoSource = { url: string } | { path: string; contentType: string };
-
-const CONTENT_TYPES: Record<string, string> = { mp4: "video/mp4", webm: "video/webm", mov: "video/quicktime" };
-
 export interface VideoStorage {
   uploadTarget(key: string, contentType: string): Promise<UploadTarget>;
   exists(key: string): Promise<boolean>;
-  /** Where a transcription service can read the video: a short-lived signed URL, or a local file. */
-  source(key: string): Promise<VideoSource>;
+  /** A short-lived URL the profile worker can download the video from. */
+  readUrl(key: string, appBase: string): Promise<string>;
   remove(keys: string[]): Promise<void>;
 }
 
@@ -54,8 +50,10 @@ const diskStorage: VideoStorage = {
       return false;
     }
   },
-  async source(key) {
-    return { path: localVideoPath(key), contentType: CONTENT_TYPES[key.split(".").pop() ?? ""] ?? "application/octet-stream" };
+  async readUrl(key, appBase) {
+    const exp = Date.now() + 30 * 60_000;
+    const qs = new URLSearchParams({ key, exp: String(exp), sig: sign(`read:${key}:${exp}`) });
+    return `${appBase}/api/video?${qs}`;
   },
   async remove(keys) {
     for (const k of keys) fs.rmSync(localVideoPath(k), { force: true });
@@ -86,16 +84,16 @@ function supabaseStorage(base: string, serviceKey: string, bucket: string): Vide
       const items = (await r.json()) as { name: string }[];
       return items.some((i) => i.name === name);
     },
-    async source(key) {
-      // Private bucket: hand the transcription service a link that expires in 15 minutes.
+    async readUrl(key) {
+      // Private bucket: hand the worker a link that expires in 30 minutes (covers cold starts + retries).
       const r = await fetch(`${api}/object/sign/${bucket}/${key}`, {
         method: "POST",
         headers: { ...auth, "Content-Type": "application/json" },
-        body: JSON.stringify({ expiresIn: 900 }),
+        body: JSON.stringify({ expiresIn: 1800 }),
       });
       if (!r.ok) throw new Error(`Could not sign video URL (${r.status})`);
       const { signedURL } = (await r.json()) as { signedURL: string };
-      return { url: `${api}${signedURL}` };
+      return `${api}${signedURL}`;
     },
     async remove(keys) {
       if (!keys.length) return;

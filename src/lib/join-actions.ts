@@ -3,7 +3,8 @@
 import { redirect } from "next/navigation";
 import { store } from "./store";
 import { loadAttendee, nextStep } from "./attendee";
-import { fieldExtractor, transcriber } from "./extract";
+import { completeProcessing } from "./processing";
+import { dispatchProfileJob, WORKER_TIMEOUT_MS } from "./worker";
 import { videoStorage, type UploadTarget } from "./video-storage";
 import { clearAttendeeSession, setAttendeeSession } from "./session";
 import { newId, nowIso } from "./util";
@@ -73,57 +74,39 @@ export async function finishUpload(
   code: string,
   meta: { photo: string | null },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { me } = await requireMe(code);
+  const { loc, me } = await requireMe(code);
   if (!me.videoKey || !(await videoStorage().exists(me.videoKey))) {
     return { ok: false, error: "We didn't receive your video. Please try again." };
   }
   const photo = meta.photo && meta.photo.startsWith("data:image/jpeg;base64,") && meta.photo.length < 400_000 ? meta.photo : null;
-  await (await store()).updateProfile(me.id, { status: "processing", photo, transcript: null, updatedAt: nowIso() });
+  const s = await store();
+  await s.updateProfile(me.id, { status: "processing", photo, transcript: null, updatedAt: nowIso() });
+
+  const updated = { ...me, status: "processing" as const, photo, transcript: null };
+  let dispatched = false;
+  try {
+    dispatched = await dispatchProfileJob(updated, loc);
+  } catch (e) {
+    console.error(`[finishUpload] could not start the profile worker for ${me.id}:`, e);
+  }
+  // No worker configured or it couldn't be reached: go straight to the form, filled by hand.
+  if (!dispatched) await completeProcessing(updated, {}, null);
   return { ok: true };
 }
 
 /**
- * Advances video processing by one step per call (transcribe, then extract), so each request stays
- * well inside serverless time limits. The browser calls it until `done`. If a provider isn't
- * configured or fails, the attendee still gets to the review form and fills it in by hand.
+ * Polled by the browser while the worker builds the profile. Once the worker reports back the
+ * profile is in "review". If it never does, the guest is moved on to fill the form by hand.
  */
-export async function processVideo(code: string): Promise<{ done: false } | { done: true; next: string }> {
+export async function checkProcessing(code: string): Promise<{ done: false } | { done: true; next: string }> {
   const { me } = await requireMe(code);
-  const s = await store();
-  if (me.status !== "processing" || !me.videoKey) return { done: true, next: nextStep(code, me) };
-
-  const finish = async (found: Partial<ProfileFields>) => {
-    const extracted = (Object.keys(found) as (keyof ProfileFields)[]).filter((k) => {
-      const v = found[k];
-      return Array.isArray(v) ? v.length > 0 : v !== null && v !== undefined && v !== "";
-    });
-    const fields = { ...me.fields };
-    for (const k of extracted) (fields as Record<string, unknown>)[k] = found[k];
-    await s.updateProfile(me.id, { status: "review", fields, extracted, updatedAt: nowIso() });
-    return { done: true as const, next: `/l/${code}/me` };
-  };
-
-  if (me.transcript === null) {
-    const t = transcriber();
-    if (!t) return finish({});
-    try {
-      const transcript = await t.transcribe(await videoStorage().source(me.videoKey));
-      await s.updateProfile(me.id, { transcript, updatedAt: nowIso() });
-      return { done: false };
-    } catch (e) {
-      console.error(`[processVideo] transcription failed for ${me.id}:`, e);
-      return finish({});
-    }
+  if (me.status !== "processing") return { done: true, next: nextStep(code, me) };
+  if (Date.now() - new Date(me.updatedAt).getTime() > WORKER_TIMEOUT_MS) {
+    console.warn(`[checkProcessing] worker timed out for ${me.id}; falling back to manual form`);
+    await completeProcessing(me, {}, null);
+    return { done: true, next: `/l/${code}/me` };
   }
-
-  const fx = fieldExtractor();
-  if (!fx || !me.transcript.trim()) return finish({});
-  try {
-    return finish(await fx.extract(me.transcript));
-  } catch (e) {
-    console.error(`[processVideo] extraction failed for ${me.id}:`, e);
-    return finish({});
-  }
+  return { done: false };
 }
 
 function clip(v: FormDataEntryValue | null, max: number): string {
