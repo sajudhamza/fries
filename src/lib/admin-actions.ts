@@ -13,8 +13,9 @@ function requireAdmin() {
 }
 
 export async function login(formData: FormData) {
-  const given = Buffer.from(String(formData.get("password") ?? ""));
-  const expected = Buffer.from(process.env.ADMIN_PASSWORD ?? "");
+  // Trim both sides: values pasted into a hosting console or the form often pick up stray spaces/newlines.
+  const given = Buffer.from(String(formData.get("password") ?? "").trim());
+  const expected = Buffer.from((process.env.ADMIN_PASSWORD ?? "").trim());
   if (!expected.length || given.length !== expected.length || !timingSafeEqual(given, expected)) {
     redirect("/admin/login?error=1");
   }

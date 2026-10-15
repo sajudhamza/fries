@@ -1,0 +1,24 @@
+# AWS Amplify Hosting build spec. Next.js 14 (SSR / server actions) is detected automatically.
+# Amplify does NOT pass console environment variables to the server at request time on its own:
+# the build step copies the allow-listed ones into .env.production so Next.js can read them.
+# Set them under Hosting → Environment variables. Any variable missing from this list is invisible
+# to the running app.
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm use 20
+        - npm ci
+    build:
+      commands:
+        - env | grep -E '^(DATABASE_URL|DATABASE_POOL_MAX|SUPABASE_URL|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_VIDEO_BUCKET|NEXT_PUBLIC_APP_URL|SESSION_SECRET|ADMIN_PASSWORD|CRON_SECRET)=' >> .env.production || true
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*
