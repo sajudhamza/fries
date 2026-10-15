@@ -34,7 +34,7 @@ src/lib/
   types.ts          Location (the QR bucket) and Profile
   store.ts          file store (.data/db.json) or Postgres when DATABASE_URL is set (db/pg-store.ts)
   video-storage.ts  local disk or private Supabase Storage bucket; browser uploads directly via signed URL
-  extract.ts        VIDEO -> PROFILE seam (manual for now; plug transcription + LLM extraction in here)
+  extract.ts        VIDEO -> PROFILE: Deepgram speech-to-text, then Claude fills ProfileFields from the transcript
   lifecycle.ts      endEvent / purgeExpired: deletes every video + profile in a location
   session.ts        HMAC-signed cookies: admin, and one attendee cookie per location (path-scoped)
   admin-actions.ts  create / edit / end / delete locations
@@ -47,6 +47,18 @@ also delete their own profile and video at any time from `/l/:code/me`.
 
 **Bucket isolation.** An attendee's cookie is scoped to one location's path and names one profile. Every
 profile read checks `profile.locationId === location.id`; a profile from another location returns 404.
+
+## Video → profile extraction
+
+After upload the browser drives two short server steps (each well under serverless time limits):
+
+1. **Transcribe**: Deepgram (`nova-3`) reads the video directly from a 15-minute signed storage URL.
+2. **Extract**: Claude (`claude-opus-5-5`, structured output) fills name, age, height, pronouns, occupation,
+   bio, hobbies and what they're looking for, using only what the person said. Unstated fields stay blank.
+
+The attendee then reviews the result (fields from the video are labelled) and goes live. Set
+`DEEPGRAM_API_KEY` and `ANTHROPIC_API_KEY` to turn it on; without them, or if either step fails, the
+attendee lands on the same form and fills it in by hand. Transcripts are deleted with the profile.
 
 ## Production (Supabase + Amplify)
 

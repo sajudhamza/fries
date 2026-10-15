@@ -15,7 +15,7 @@ export default async function VideoPage({ params }: { params: { code: string } }
     <PublicShell loc={loc}>
       <h1 className="mb-1 mt-2 font-display text-3xl font-bold">Your intro</h1>
       <p className="mb-6 text-sm text-haze-300">Only used to build your profile. It&apos;s never shown to anyone and is deleted when the event ends.</p>
-      <VideoCapture code={loc.code} />
+      <VideoCapture code={loc.code} resume={me.status === "processing"} />
     </PublicShell>
   );
 }

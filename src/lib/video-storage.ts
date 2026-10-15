@@ -15,11 +15,15 @@ export interface UploadTarget {
   headers: Record<string, string>;
 }
 
+export type VideoSource = { url: string } | { path: string; contentType: string };
+
+const CONTENT_TYPES: Record<string, string> = { mp4: "video/mp4", webm: "video/webm", mov: "video/quicktime" };
+
 export interface VideoStorage {
   uploadTarget(key: string, contentType: string): Promise<UploadTarget>;
   exists(key: string): Promise<boolean>;
-  /** Absolute local path (disk) or a URL readable with the service key (Supabase), for the extractor. */
-  locate(key: string): Promise<string>;
+  /** Where a transcription service can read the video: a short-lived signed URL, or a local file. */
+  source(key: string): Promise<VideoSource>;
   remove(keys: string[]): Promise<void>;
 }
 
@@ -50,8 +54,8 @@ const diskStorage: VideoStorage = {
       return false;
     }
   },
-  async locate(key) {
-    return localVideoPath(key);
+  async source(key) {
+    return { path: localVideoPath(key), contentType: CONTENT_TYPES[key.split(".").pop() ?? ""] ?? "application/octet-stream" };
   },
   async remove(keys) {
     for (const k of keys) fs.rmSync(localVideoPath(k), { force: true });
@@ -82,8 +86,16 @@ function supabaseStorage(base: string, serviceKey: string, bucket: string): Vide
       const items = (await r.json()) as { name: string }[];
       return items.some((i) => i.name === name);
     },
-    async locate(key) {
-      return `${api}/object/${bucket}/${key}`;
+    async source(key) {
+      // Private bucket: hand the transcription service a link that expires in 15 minutes.
+      const r = await fetch(`${api}/object/sign/${bucket}/${key}`, {
+        method: "POST",
+        headers: { ...auth, "Content-Type": "application/json" },
+        body: JSON.stringify({ expiresIn: 900 }),
+      });
+      if (!r.ok) throw new Error(`Could not sign video URL (${r.status})`);
+      const { signedURL } = (await r.json()) as { signedURL: string };
+      return { url: `${api}${signedURL}` };
     },
     async remove(keys) {
       if (!keys.length) return;

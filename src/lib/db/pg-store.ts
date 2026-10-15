@@ -24,7 +24,25 @@ function pool(): Pool {
   return g.__friesPool;
 }
 
-const q = (text: string, params: unknown[] = []) => pool().query(text, params);
+// Additive, idempotent schema changes applied on first use, so a deploy never runs ahead of the
+// database. They mirror supabase/migrations; anything destructive belongs there, not here.
+const ENSURE_SCHEMA = ["alter table profiles add column if not exists transcript text"];
+let schemaReady: Promise<void> | null = null;
+
+function ensureSchema(): Promise<void> {
+  schemaReady ??= (async () => {
+    for (const sql of ENSURE_SCHEMA) await pool().query(sql);
+  })().catch((e) => {
+    schemaReady = null;
+    throw e;
+  });
+  return schemaReady;
+}
+
+const q = async (text: string, params: unknown[] = []) => {
+  await ensureSchema();
+  return pool().query(text, params);
+};
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -51,6 +69,7 @@ function toProfile(r: any): Profile {
     photo: r.photo,
     videoKey: r.video_key,
     videoSeconds: r.video_seconds,
+    transcript: r.transcript ?? null,
     consentAt: iso(r.consent_at)!,
     createdAt: iso(r.created_at)!,
     updatedAt: iso(r.updated_at)!,
@@ -62,7 +81,7 @@ const LOC_COLS: Record<string, string> = {
 };
 const PROF_COLS: Record<string, string> = {
   status: "status", fields: "fields", extracted: "extracted", photo: "photo", videoKey: "video_key",
-  videoSeconds: "video_seconds", consentAt: "consent_at", createdAt: "created_at", updatedAt: "updated_at",
+  videoSeconds: "video_seconds", transcript: "transcript", consentAt: "consent_at", createdAt: "created_at", updatedAt: "updated_at",
 };
 const JSON_COLS = new Set(["fields", "extracted"]);
 
@@ -140,3 +159,12 @@ export const pgStore: Store = {
     await q("delete from profiles where location_id = $1", [locationId]);
   },
 };
+
+/** Used by /api/health to spot migrations that haven't been run yet. */
+export async function columnExists(table: string, column: string): Promise<boolean> {
+  const r = await q(
+    "select 1 from information_schema.columns where table_schema = 'public' and table_name = $1 and column_name = $2",
+    [table, column],
+  );
+  return (r.rowCount ?? 0) > 0;
+}

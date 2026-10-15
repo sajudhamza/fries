@@ -44,6 +44,8 @@ export interface Profile {
   photo: string | null;
   videoKey: string | null;
   videoSeconds: number | null;
+  /** Speech-to-text of the intro video. Null until transcribed; deleted with the profile. */
+  transcript: string | null;
   consentAt: string;
   createdAt: string;
   updatedAt: string;

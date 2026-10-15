@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 const VARS = [
   "DATABASE_URL", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_VIDEO_BUCKET",
   "NEXT_PUBLIC_APP_URL", "SESSION_SECRET", "ADMIN_PASSWORD", "CRON_SECRET",
+  "DEEPGRAM_API_KEY", "ANTHROPIC_API_KEY",
 ] as const;
 
 function short(e: unknown): string {
@@ -27,6 +28,10 @@ export async function GET() {
       const { pgStore } = await import("@/lib/db/pg-store");
       const locations = await pgStore.listLocations();
       database = `ok (${locations.length} locations)`;
+      const { columnExists } = await import("@/lib/db/pg-store");
+      if (!(await columnExists("profiles", "transcript"))) {
+        database += " but missing column profiles.transcript: run supabase/migrations/20261015000000_transcript.sql";
+      }
     } catch (e) {
       database = `error: ${short(e)}`;
     }

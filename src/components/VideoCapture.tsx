@@ -3,7 +3,7 @@
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { finishUpload, requestUpload } from "@/lib/join-actions";
+import { finishUpload, processVideo, requestUpload } from "@/lib/join-actions";
 import { VIDEO_MAX_BYTES, VIDEO_MAX_SECONDS, VIDEO_MIN_SECONDS } from "@/lib/types";
 
 type Phase = "choose" | "recording" | "ready" | "uploading" | "processing";
@@ -78,9 +78,10 @@ function inspectFile(file: File): Promise<{ seconds: number; photo: string | nul
   });
 }
 
-export function VideoCapture({ code }: { code: string }) {
+export function VideoCapture({ code, resume = false }: { code: string; resume?: boolean }) {
   const router = useRouter();
-  const [phase, setPhase] = useState<Phase>("choose");
+  const [phase, setPhase] = useState<Phase>(resume ? "processing" : "choose");
+  const [step, setStep] = useState<"listening" | "writing">("listening");
   const [error, setError] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [clip, setClip] = useState<Clip | null>(null);
@@ -94,6 +95,27 @@ export function VideoCapture({ code }: { code: string }) {
   const startedAtRef = useRef(0);
 
   useEffect(() => () => stopStream(), []);
+
+  // Came back mid-processing (refresh, closed tab): pick up where the server left off.
+  useEffect(() => {
+    if (resume) void runProcessing();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resume]);
+
+  async function runProcessing() {
+    setPhase("processing");
+    setStep("listening");
+    for (let i = 0; i < 6; i++) {
+      try {
+        const r = await processVideo(code);
+        if (r.done) return router.push(r.next);
+        setStep("writing");
+      } catch {
+        await new Promise((res) => setTimeout(res, 1500));
+      }
+    }
+    router.refresh();
+  }
 
   function stopStream() {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -203,14 +225,13 @@ export function VideoCapture({ code }: { code: string }) {
       setPhase("ready");
       return;
     }
-    setPhase("processing");
     const done = await finishUpload(code, { photo: clip.photo });
     if (!done.ok) {
       setError(done.error);
       setPhase("ready");
       return;
     }
-    router.push(done.next);
+    await runProcessing();
   }
 
   const tooShort = clip ? clip.seconds < VIDEO_MIN_SECONDS - 1 : false;
@@ -248,7 +269,7 @@ export function VideoCapture({ code }: { code: string }) {
         {(phase === "uploading" || phase === "processing") && (
           <div className="absolute inset-0 grid place-items-center bg-night-950/80 backdrop-blur-sm">
             <div className="w-2/3 text-center">
-              <p className="font-semibold">{phase === "uploading" ? `Uploading ${Math.round(progress * 100)}%` : "Building your profile…"}</p>
+              <p className="font-semibold">{phase === "uploading" ? `Uploading ${Math.round(progress * 100)}%` : step === "listening" ? "Listening to your intro…" : "Writing your profile…"}</p>
               <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
                 <div className={clsx("h-full rounded-full bg-rose-500 transition-all", phase === "processing" && "w-full animate-pulse")} style={phase === "uploading" ? { width: `${progress * 100}%` } : undefined} />
               </div>
