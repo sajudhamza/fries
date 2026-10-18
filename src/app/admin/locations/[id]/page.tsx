@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { AdminHeader } from "../../AdminHeader";
 import { ConfirmSubmit, CopyButton, DateTimeField, LocalTime } from "@/components/client";
 import { Notice, StatusPill } from "@/components/ui";
-import { deleteLocation, endEventNow, updateLocation } from "@/lib/admin-actions";
+import { deleteLocation, endEventNow, removeProfile, updateLocation } from "@/lib/admin-actions";
 import { ensureFresh } from "@/lib/lifecycle";
 import { isAdmin } from "@/lib/session";
 import { store } from "@/lib/store";
@@ -22,13 +22,14 @@ const STATUS_LABEL: Record<ProfileStatus, string> = {
   live: "Live",
 };
 
-export default async function LocationAdmin({ params, searchParams }: { params: { id: string }; searchParams: { saved?: string; purged?: string } }) {
+export default async function LocationAdmin({ params, searchParams }: { params: { id: string }; searchParams: { saved?: string; purged?: string; removed?: string } }) {
   if (!isAdmin()) redirect("/admin/login");
   const s = await store();
   const found = await s.getLocation(params.id);
   if (!found) notFound();
   const loc = await ensureFresh(found);
-  const profiles = await s.listProfiles(loc.id);
+  const [profiles, social] = await Promise.all([s.listProfiles(loc.id), s.socialStats(loc.id)]);
+  const reported = new Set(social.reported);
   const url = joinUrl(loc.code);
   const svg = await QRCode.toString(url, { type: "svg", errorCorrectionLevel: "M", margin: 1, color: { dark: "#0B0A10", light: "#FFFFFF" } });
   const state = locationState(loc);
@@ -51,6 +52,10 @@ export default async function LocationAdmin({ params, searchParams }: { params: 
 
         <div className="mt-6 space-y-3">
           {searchParams.saved && <Notice tone="ok">Saved.</Notice>}
+          {searchParams.removed && <Notice tone="ok">Guest removed, along with their video, matches and messages.</Notice>}
+          {social.reported.length > 0 && (
+            <Notice tone="error">{social.reported.length} {social.reported.length === 1 ? "guest has" : "guests have"} been reported by other guests. They&apos;re flagged below.</Notice>
+          )}
           {searchParams.purged && <Notice tone="ok">Event closed. Deleted {purgedProfiles} profiles and {purgedVideos} videos.</Notice>}
           {state === "ended" && <Notice>This event has ended and its profiles and videos were deleted. Set a new end time below to reopen it with the same QR code.</Notice>}
         </div>
@@ -79,6 +84,9 @@ export default async function LocationAdmin({ params, searchParams }: { params: 
                 <h2 className="font-display text-xl font-bold">People at this location</h2>
                 <span className="text-sm text-haze-300">{live} live · {profiles.length} total</span>
               </div>
+              <p className="mt-1 text-sm text-haze-500">
+                {social.likes} {social.likes === 1 ? "like" : "likes"} · {social.matches} {social.matches === 1 ? "match" : "matches"} · {social.messages} {social.messages === 1 ? "message" : "messages"}
+              </p>
               {profiles.length === 0 ? (
                 <p className="mt-3 text-sm text-haze-500">Nobody has scanned this code yet.</p>
               ) : (
@@ -94,8 +102,14 @@ export default async function LocationAdmin({ params, searchParams }: { params: 
                         )}
                       </span>
                       <span className="flex shrink-0 items-center gap-3 text-haze-500">
+                        {reported.has(p.id) && <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-xs font-semibold text-rose-300">Reported</span>}
                         <StatusPill tone={p.status === "live" ? "live" : "muted"}>{STATUS_LABEL[p.status]}</StatusPill>
                         <LocalTime iso={p.createdAt} mode="time" />
+                        <form action={removeProfile.bind(null, loc.id, p.id)}>
+                          <ConfirmSubmit className="text-xs text-haze-500 underline hover:text-rose-300" message={`Remove ${p.fields.name || "this guest"} from the event? Their profile, video, matches and messages are deleted.`}>
+                            Remove
+                          </ConfirmSubmit>
+                        </form>
                       </span>
                     </li>
                   ))}

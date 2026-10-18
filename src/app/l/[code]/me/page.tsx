@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { PublicShell } from "../PublicShell";
 import { ConfirmSubmit } from "@/components/client";
 import { Avatar, Notice } from "@/components/ui";
-import { GENDERS, INTERESTS, type Gender, type Interest } from "@/lib/types";
+import { GENDERS, INTERESTS, SWIPE_COPY, type Gender, type Interest } from "@/lib/types";
+import { SocialTabs } from "@/components/SocialTabs";
 import { loadAttendee } from "@/lib/attendee";
 import { leaveLocation, saveProfile } from "@/lib/join-actions";
 import type { ProfileFields } from "@/lib/types";
@@ -114,6 +115,8 @@ export default async function MePage({ params, searchParams }: { params: { code:
 
         <button className="btn-primary w-full py-3.5 text-base">{isLive ? "Save" : "Go live"}</button>
       </form>
+
+      {isLive && <SocialTabs code={loc.code} active="me" matchesLabel={SWIPE_COPY[loc.eventType].matches} initialCount={0} />}
 
       <form action={leaveLocation.bind(null, loc.code)} className="mt-8 text-center">
         <ConfirmSubmit className="text-sm text-haze-500 underline hover:text-rose-300" message="Delete your profile and intro video now? This can't be undone.">

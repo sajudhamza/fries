@@ -116,3 +116,55 @@ export function profileFieldsFor(eventType: EventType): FieldMeta[] {
 export const VIDEO_MIN_SECONDS = 15;
 export const VIDEO_MAX_SECONDS = 60;
 export const VIDEO_MAX_BYTES = 300 * 1024 * 1024;
+
+// --- swiping, matching and chat ------------------------------------------------------------------
+
+/** One person's decision about another. "block" also hides them from each other in both directions. */
+export type SwipeDecision = "like" | "pass" | "block";
+
+export interface Swipe {
+  fromId: string;
+  toId: string;
+  locationId: string;
+  decision: SwipeDecision;
+  reported: boolean;
+  reason: string | null;
+  createdAt: string;
+}
+
+/** A mutual like. aId < bId so each pair has exactly one match. */
+export interface Match {
+  id: string;
+  locationId: string;
+  aId: string;
+  bId: string;
+  createdAt: string;
+  /** When each side last opened the chat (null = hasn't seen the match yet). */
+  aReadAt: string | null;
+  bReadAt: string | null;
+  lastMessageAt: string | null;
+}
+
+export type MessageKind = "text" | "meet";
+
+export interface Message {
+  id: string;
+  matchId: string;
+  locationId: string;
+  fromId: string;
+  kind: MessageKind;
+  body: string;
+  createdAt: string;
+}
+
+export const MESSAGE_MAX_LENGTH = 1000;
+
+/** Wording per event type: dating language only at matchmaking events. */
+export const SWIPE_COPY: Record<EventType, { deck: string; like: string; pass: string; matched: string; matches: string; empty: string }> = {
+  matchmaking: { deck: "Discover", like: "Like", pass: "Pass", matched: "It's a match!", matches: "Matches", empty: "No matches yet. Keep swiping!" },
+  social: { deck: "Discover", like: "Connect", pass: "Skip", matched: "You're connected!", matches: "Connections", empty: "No connections yet. Keep swiping!" },
+  business: { deck: "Discover", like: "Connect", pass: "Skip", matched: "You're connected!", matches: "Connections", empty: "No connections yet. Keep swiping!" },
+};
+
+/** Quick picks for "Let's meet" (anyone can also type their own spot). */
+export const MEET_SPOTS = ["At the bar", "By the entrance", "On the dance floor", "Outside / terrace", "Near the DJ / stage"];

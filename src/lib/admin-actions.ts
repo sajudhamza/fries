@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { store } from "./store";
 import { endEvent } from "./lifecycle";
+import { videoStorage } from "./video-storage";
 import { clearAdminSession, isAdmin, setAdminSession } from "./session";
 import { newId, nowIso, randomCode } from "./util";
 import { EVENT_TYPES, type EventType } from "./types";
@@ -86,4 +87,17 @@ export async function deleteLocation(id: string) {
   await endEvent(id);
   await (await store()).deleteLocation(id);
   redirect("/admin");
+}
+
+/** Host moderation: removes one guest (profile, video, swipes, matches and messages) immediately. */
+export async function removeProfile(locationId: string, profileId: string) {
+  requireAdmin();
+  const s = await store();
+  const p = await s.getProfile(profileId);
+  if (p && p.locationId === locationId) {
+    if (p.videoKey) await videoStorage().remove([p.videoKey]);
+    await s.deleteProfile(p.id);
+  }
+  revalidatePath(`/admin/locations/${locationId}`);
+  redirect(`/admin/locations/${locationId}?removed=1`);
 }

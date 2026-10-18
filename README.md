@@ -24,7 +24,8 @@ Camera recording needs HTTPS on phones (localhost is exempt); the upload-a-file 
 | `/l/:code` | What the QR opens: event intro + consent (18+, processing, deletion at event end) |
 | `/l/:code/video` | Record in the browser or upload a 15 to 60 second video (direct upload, progress bar) |
 | `/l/:code/me` | Review the details extracted from the video, edit, go live, or delete now |
-| `/l/:code/people` | Everyone live at this location (only visible once your own profile is live) |
+| `/l/:code/people` | Swipe deck: right to like/connect, left to pass (only once your own profile is live) |
+| `/l/:code/matches` | Mutual likes, with unread badges; `/l/:code/matches/:id` is the chat (with "Let's meet" spots) |
 | `/api/cron/purge` | `Authorization: Bearer $CRON_SECRET`; ends every event past its end time |
 
 ## How the pieces fit
@@ -44,6 +45,12 @@ src/lib/
 **Deletion guarantees.** Each event's end time is enforced three ways: lazily on every public page load,
 when the admin console loads, and by `/api/cron/purge` (schedule it every 5 minutes in production). Attendees can
 also delete their own profile and video at any time from `/l/:code/me`.
+
+**Swiping, matching, chat.** Every event type uses the same deck; matchmaking says Like/Pass and
+"It's a match!", business and social say Connect/Skip. A mutual like creates a match and opens a one-to-one
+chat (polled every 2.5s) with a "Let's meet" card for a spot at the venue. Guests can unmatch or block and
+report; blocks hide both people from each other everywhere, and reports are flagged to the host, who can remove
+a guest from the admin page. Swipes, matches and messages cascade from profiles, so they are deleted with them.
 
 **Bucket isolation.** An attendee's cookie is scoped to one location's path and names one profile. Every
 profile read checks `profile.locationId === location.id`; a profile from another location returns 404.

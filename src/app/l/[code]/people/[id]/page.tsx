@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { PublicShell } from "../../PublicShell";
+import { BlockMenu } from "@/components/BlockMenu";
 import { Avatar } from "@/components/ui";
 import { loadAttendee } from "@/lib/attendee";
+import { canInteract, pair } from "@/lib/social";
+import { blockProfile } from "@/lib/social-actions";
 import { store } from "@/lib/store";
-import { canSee } from "@/lib/visibility";
 
 export const dynamic = "force-dynamic";
 
@@ -12,19 +14,27 @@ export default async function PersonPage({ params }: { params: { code: string; i
   const { loc, me } = await loadAttendee(params.code);
   if (loc.endedAt || !me || me.status !== "live") redirect(`/l/${params.code}`);
 
-  const p = await (await store()).getProfile(params.id);
-  // Strict bucket boundary: a profile from any other location is indistinguishable from a missing one.
-  if (!p || p.locationId !== loc.id || p.status !== "live" || !canSee(loc, me, p)) notFound();
+  const s = await store();
+  const p = await s.getProfile(params.id);
+  // Strict boundary: other locations, non-matching preferences and blocks all look like "not found".
+  if (!p || !(await canInteract(loc, me, p))) notFound();
+  const match = await s.findMatch(...pair(me.id, p.id));
   const f = p.fields;
-  const facts = [f.height && `${f.height}`, f.pronouns, f.occupation].filter(Boolean) as string[];
+  const business = loc.eventType === "business";
+  const facts = (business ? [f.occupation, f.pronouns] : [f.height, f.pronouns, f.occupation]).filter(Boolean);
 
   return (
     <PublicShell loc={loc}>
-      <Link href={`/l/${loc.code}/people`} className="text-sm text-haze-300 hover:text-white">← Everyone here</Link>
+      <div className="flex items-center justify-between">
+        <Link href={match ? `/l/${loc.code}/matches/${match.id}` : `/l/${loc.code}/people`} className="text-sm text-haze-300 hover:text-white">
+          ← {match ? "Back to chat" : "Back to Discover"}
+        </Link>
+        <BlockMenu name={f.name} blockAction={blockProfile.bind(null, loc.code, p.id)} />
+      </div>
       <div className="mt-4">
         <Avatar name={f.name} photo={p.photo} size="lg" />
       </div>
-      <h1 className="mt-5 font-display text-4xl font-bold">{f.name}{f.age ? <span className="font-normal text-haze-300">, {f.age}</span> : null}</h1>
+      <h1 className="mt-5 font-display text-4xl font-bold">{f.name}{!business && f.age ? <span className="font-normal text-haze-300">, {f.age}</span> : null}</h1>
       {facts.length > 0 && <p className="mt-1 text-haze-300">{facts.join(" · ")}</p>}
 
       {f.bio && <p className="mt-6 whitespace-pre-line text-lg leading-relaxed">{f.bio}</p>}
@@ -44,6 +54,8 @@ export default async function PersonPage({ params }: { params: { code: string; i
           </div>
         </section>
       )}
+
+      {match && <Link href={`/l/${loc.code}/matches/${match.id}`} className="btn-primary mt-8 w-full py-3.5 text-base">Message {f.name}</Link>}
     </PublicShell>
   );
 }
