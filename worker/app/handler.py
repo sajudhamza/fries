@@ -47,7 +47,8 @@ def _get_llm():
     if _llm is None:
         from llama_cpp import Llama
 
-        _llm = Llama(model_path=LLM_PATH, n_ctx=4096, n_threads=THREADS, n_batch=512, verbose=False)
+        # A 60s intro is ~200 tokens and the prompt ~600, so 2048 is plenty and keeps memory well under 3 GB.
+        _llm = Llama(model_path=LLM_PATH, n_ctx=2048, n_threads=THREADS, n_batch=512, verbose=False)
     return _llm
 
 
@@ -110,7 +111,7 @@ def llm_extract(transcript: str) -> dict:
         ],
         response_format={"type": "json_object", "schema": SCHEMA},
         temperature=0.0,
-        max_tokens=600,
+        max_tokens=450,
     )
     try:
         data = json.loads(out["choices"][0]["message"]["content"])
@@ -209,6 +210,12 @@ def process(job: dict) -> dict:
 
 
 def handler(event, context=None):
+    # Scheduled keep-warm ping: load both models so the next guest doesn't pay for a cold start.
+    if isinstance(event, dict) and event.get("warmup"):
+        t = time.time()
+        _get_whisper()
+        _get_llm()
+        return {"ok": True, "warmup": True, "seconds": round(time.time() - t, 2)}
     job = event
     if isinstance(job, dict) and isinstance(job.get("body"), str):  # function URL / API style payloads
         job = json.loads(job["body"])

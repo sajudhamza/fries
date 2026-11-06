@@ -4,6 +4,8 @@ import { ConfirmSubmit } from "@/components/client";
 import { Avatar, Notice } from "@/components/ui";
 import { GENDERS, INTERESTS, SWIPE_COPY, type Gender, type Interest } from "@/lib/types";
 import { SocialTabs } from "@/components/SocialTabs";
+import { LateFill } from "@/components/LateFill";
+import { workerMode } from "@/lib/worker";
 import { loadAttendee } from "@/lib/attendee";
 import { leaveLocation, saveProfile } from "@/lib/join-actions";
 import type { ProfileFields } from "@/lib/types";
@@ -21,6 +23,10 @@ export default async function MePage({ params, searchParams }: { params: { code:
     me.extracted.includes(k) ? <span className="ml-2 normal-case tracking-normal text-brass">from your video</span> : null;
   const isLive = me.status === "live";
   const matchmaking = loc.eventType === "matchmaking";
+  // The worker hasn't reported back yet (slow run): keep listening for it on this page.
+  const waitingForVideo =
+    workerMode() !== "off" && me.status === "review" && me.extracted.length === 0 && me.transcript === null && !!me.videoKey &&
+    Date.now() - new Date(me.updatedAt).getTime() < 10 * 60_000;
 
   return (
     <PublicShell loc={loc}>
@@ -31,7 +37,8 @@ export default async function MePage({ params, searchParams }: { params: { code:
           : "Fill in anything you'd like people here to know, then go live."}
       </p>
 
-      <form action={saveProfile.bind(null, loc.code)} className="mt-6 space-y-4">
+      <form id="profile-form" action={saveProfile.bind(null, loc.code)} className="mt-6 space-y-4">
+        {waitingForVideo && <LateFill code={loc.code} formId="profile-form" />}
         {searchParams.error === "name" && <Notice tone="error">Add your name so people know who you are.</Notice>}
         {searchParams.error === "prefs" && <Notice tone="error">Tell us who you are and who you&apos;d like to see.</Notice>}
         {searchParams.prefs && <Notice>The host made this a matchmaking event. Add your preferences below to keep browsing.</Notice>}

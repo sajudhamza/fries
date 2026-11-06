@@ -21,8 +21,12 @@ export function workerMode(): WorkerMode {
   return "off";
 }
 
-/** How long the app waits for the worker before letting the guest fill the form by hand. */
-export const WORKER_TIMEOUT_MS = 8 * 60_000;
+/**
+ * How long the app waits for the worker before letting the guest fill the form by hand. Longer than
+ * the Lambda's own 600s timeout, so a slow (cold) run is never abandoned while it can still finish.
+ * Results that still arrive later are applied if the guest hasn't saved the form yet.
+ */
+export const WORKER_TIMEOUT_MS = 11 * 60_000;
 
 export function jobToken(profileId: string, videoKey: string): string {
   return sign(`worker:${profileId}:${videoKey}`);

@@ -3,7 +3,7 @@
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { checkProcessing, finishUpload, requestUpload } from "@/lib/join-actions";
+import { checkProcessing, finishUpload, requestUpload, skipProcessing } from "@/lib/join-actions";
 import { VIDEO_MAX_BYTES, VIDEO_MAX_SECONDS, VIDEO_MIN_SECONDS, type FieldKey, type FieldMeta } from "@/lib/types";
 
 type Phase = "choose" | "recording" | "uploading" | "processing" | "failed";
@@ -249,6 +249,13 @@ export function VideoCapture({ code, fields, resume = false }: { code: string; f
   }
 
   const busy = phase === "uploading" || phase === "processing";
+  // After 90s of processing, offer a way out (results still fill the form if they arrive later).
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (phase !== "processing") return setSlow(false);
+    const t = setTimeout(() => setSlow(true), 90_000);
+    return () => clearTimeout(t);
+  }, [phase]);
   const canStop = elapsed >= VIDEO_MIN_SECONDS;
 
   return (
@@ -321,7 +328,16 @@ export function VideoCapture({ code, fields, resume = false }: { code: string; f
             <button className="btn-ghost" onClick={() => { clipRef.current = null; setError(null); setPhase("choose"); }}>Record a new one</button>
           </>
         )}
-        {busy && !result && <p className="text-center text-xs text-forest/55">Keep this page open. This usually takes under a minute.</p>}
+        {busy && !result && (
+          <p className="text-center text-xs text-forest/55">
+            {slow
+              ? "Taking longer than usual. Hang tight, or keep going and fill in your profile yourself."
+              : "Keep this page open. This usually takes under a minute."}
+          </p>
+        )}
+        {busy && !result && slow && (
+          <button className="btn-ghost" onClick={() => void skipProcessing(code)}>Fill it in myself</button>
+        )}
         {result && revealed >= fields.length && (
           <button className="btn-primary py-3.5 text-base" onClick={() => router.push(result.next)}>Continue</button>
         )}

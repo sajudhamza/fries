@@ -21,11 +21,15 @@ export async function POST(req: NextRequest) {
   if (expected.length !== given.length || !timingSafeEqual(expected, given)) {
     return NextResponse.json({ error: "invalid token" }, { status: 403 });
   }
-  // Late or duplicate result (guest already moved on, re-uploaded, or Lambda retried): ignore.
-  if (me.status !== "processing") return NextResponse.json({ ok: true, ignored: true });
+  // A result that lands after the app stopped waiting is still useful if the guest is on the review
+  // form and nothing from the video has been applied yet. Anything else (already filled, saved,
+  // re-uploaded, or a Lambda retry) is ignored.
+  const late = me.status === "review" && me.extracted.length === 0 && me.transcript === null;
+  if (me.status !== "processing" && !late) return NextResponse.json({ ok: true, ignored: true });
 
-  console.log(`[worker] result for ${me.id}: ok=${body.ok} timings=${JSON.stringify(body.timings ?? {})}${body.error ? ` error=${body.error}` : ""}`);
-  const transcript = typeof body.transcript === "string" ? body.transcript.slice(0, 20_000) : null;
+  console.log(`[worker] ${late ? "late " : ""}result for ${me.id}: ok=${body.ok} timings=${JSON.stringify(body.timings ?? {})}${body.error ? ` error=${body.error}` : ""}`);
+  // Store "" rather than null when there's no transcript, so the app knows the worker did report back.
+  const transcript = typeof body.transcript === "string" ? body.transcript.slice(0, 20_000) : "";
   const found = body.ok ? sanitizeFields(body.fields) : {};
   // Gender and interest only mean something at matchmaking events; never store them otherwise.
   const loc = await (await store()).getLocation(me.locationId);

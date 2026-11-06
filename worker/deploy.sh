@@ -60,6 +60,17 @@ aws lambda put-function-event-invoke-config --function-name "$FUNCTION" --region
   --maximum-retry-attempts 1 --maximum-event-age-in-seconds 900 >/dev/null
 
 FN_ARN="$(aws lambda get-function --function-name "$FUNCTION" --region "$REGION" --query Configuration.FunctionArn --output text)"
+
+# Keep-warm: ping every 5 minutes so the models stay loaded and AWS never marks the function
+# Inactive (a cold start from Inactive can take ~8 minutes). Costs well under $1/month.
+RULE="$FUNCTION-keep-warm"
+aws events put-rule --name "$RULE" --region "$REGION" --schedule-expression "rate(5 minutes)" \
+  --description "Keep the Fries profile worker warm" >/dev/null
+RULE_ARN="$(aws events describe-rule --name "$RULE" --region "$REGION" --query Arn --output text)"
+aws lambda add-permission --function-name "$FUNCTION" --region "$REGION" --statement-id keep-warm \
+  --action lambda:InvokeFunction --principal events.amazonaws.com --source-arn "$RULE_ARN" >/dev/null 2>&1 || true
+aws events put-targets --rule "$RULE" --region "$REGION" \
+  --targets "Id=worker,Arn=$FN_ARN,Input='{\"warmup\":true}'" >/dev/null
 cat <<MSG
 
 Deployed $FN_ARN

@@ -161,3 +161,16 @@ export async function leaveLocation(code: string) {
   clearAttendeeSession(code);
   redirect(`/l/${code}?left=1`);
 }
+
+/** Polled by the review form while a slow worker run may still fill it in. */
+export async function videoDetailsReady(code: string): Promise<boolean> {
+  const { me } = await loadAttendee(code);
+  return !!me && me.extracted.length > 0;
+}
+
+/** "Fill it in myself": stop waiting on a slow worker run. Its results still fill the form if they arrive. */
+export async function skipProcessing(code: string) {
+  const { me } = await requireMe(code);
+  if (me.status === "processing") await completeProcessing(me, {}, null);
+  redirect(`/l/${code}/me`);
+}
