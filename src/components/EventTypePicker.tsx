@@ -9,12 +9,12 @@ export function EventTypePicker({ defaultValue }: { defaultValue?: EventType }) 
         {(Object.keys(EVENT_TYPES) as EventType[]).map((t) => (
           <label
             key={t}
-            className="flex cursor-pointer gap-3 rounded-xl border border-white/10 bg-night-800 p-3 transition hover:border-white/25 has-[:checked]:border-rose-400 has-[:checked]:bg-rose-500/10"
+            className="flex cursor-pointer gap-3 rounded-xl border border-forest/10 bg-cream-light p-3 transition hover:border-forest/25 has-[:checked]:border-forest has-[:checked]:bg-forest/10"
           >
-            <input type="radio" name="eventType" value={t} defaultChecked={t === defaultValue} required className="mt-1 accent-rose-500" />
+            <input type="radio" name="eventType" value={t} defaultChecked={t === defaultValue} required className="mt-1 accent-forest" />
             <span>
-              <span className="block text-sm font-semibold">{EVENT_TYPES[t].label}</span>
-              <span className="block text-xs text-haze-300">{EVENT_TYPES[t].blurb}</span>
+              <span className="block font-display text-lg leading-tight">{EVENT_TYPES[t].label}</span>
+              <span className="block text-xs text-forest/70">{EVENT_TYPES[t].blurb}</span>
             </span>
           </label>
         ))}

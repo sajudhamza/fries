@@ -64,7 +64,7 @@ export function Chat({ code, matchId, meId, otherName, initial }: {
     <div className="flex flex-col">
       <div className="min-h-[50vh] space-y-2 pb-4">
         {messages.length === 0 && (
-          <p className="py-10 text-center text-sm text-haze-500">
+          <p className="py-10 text-center font-serif text-lg italic text-forest/70">
             You matched with {otherName}. Say hi, or suggest a spot to meet here at the event.
           </p>
         )}
@@ -74,17 +74,20 @@ export function Chat({ code, matchId, meId, otherName, initial }: {
             const [where, ...rest] = m.body.split("\n");
             return (
               <div key={m.id} className={clsx("flex", mine ? "justify-end" : "justify-start")}>
-                <div className="max-w-[80%] rounded-2xl border border-rose-400/40 bg-rose-500/10 px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-rose-300">{mine ? "You suggested meeting" : `${otherName} wants to meet`}</p>
-                  <p className="mt-1 font-semibold">📍 {where}</p>
-                  {rest.map((r) => <p key={r} className="text-sm text-haze-300">{r}</p>)}
+                <div className="max-w-[82%] overflow-hidden rounded-2xl bg-forest text-cream shadow-card">
+                  <div className="h-2 bg-checker bg-[length:12px_12px]" />
+                  <div className="px-4 py-3">
+                    <p className="font-serif text-[10px] font-bold uppercase tracking-caps text-sand">{mine ? "You suggested meeting" : `${otherName} wants to meet`}</p>
+                    <p className="mt-1 font-display text-2xl leading-tight">{where}</p>
+                    {rest.map((r) => <p key={r} className="mt-1 font-serif text-sm italic text-cream/80">{r}</p>)}
+                  </div>
                 </div>
               </div>
             );
           }
           return (
             <div key={m.id} className={clsx("flex", mine ? "justify-end" : "justify-start")}>
-              <p className={clsx("max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-[15px]", mine ? "rounded-br-md bg-rose-500 text-white" : "rounded-bl-md bg-night-700 text-haze-100")}>
+              <p className={clsx("max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-[15px]", mine ? "rounded-br-md bg-forest text-cream" : "rounded-bl-md border border-forest/10 bg-cream-light text-forest")}>
                 {m.body}
               </p>
             </div>
@@ -95,14 +98,14 @@ export function Chat({ code, matchId, meId, otherName, initial }: {
 
       {meetOpen && (
         <div className="card mb-3 space-y-3 p-4">
-          <p className="font-semibold">Where should you meet?</p>
+          <p className="font-display text-2xl leading-none">Where should you meet?</p>
           <div className="flex flex-wrap gap-2">
             {MEET_SPOTS.map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setSpot(s)}
-                className={clsx("rounded-full border px-3 py-1.5 text-sm", spot === s ? "border-rose-400 bg-rose-500/15 text-white" : "border-white/15 text-haze-300")}
+                className={clsx("rounded-full border px-3 py-1.5 text-sm", spot === s ? "border-forest bg-forest text-cream" : "border-forest/20 text-forest/80")}
               >
                 {s}
               </button>
@@ -130,7 +133,7 @@ export function Chat({ code, matchId, meId, otherName, initial }: {
       )}
 
       <form
-        className="sticky bottom-3 flex items-end gap-2 rounded-2xl border border-white/10 bg-night-900/95 p-2 backdrop-blur"
+        className="sticky bottom-3 flex items-end gap-2 rounded-2xl border border-forest/10 bg-cream-light/95 p-2 backdrop-blur"
         onSubmit={(e) => {
           e.preventDefault();
           const body = text;
@@ -138,7 +141,7 @@ export function Chat({ code, matchId, meId, otherName, initial }: {
           void send("text", body);
         }}
       >
-        <button type="button" aria-label="Suggest a place to meet" onClick={() => setMeetOpen((o) => !o)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/5 text-lg">
+        <button type="button" aria-label="Suggest a place to meet" onClick={() => setMeetOpen((o) => !o)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-forest/10 text-lg">
           📍
         </button>
         <textarea
@@ -153,7 +156,7 @@ export function Chat({ code, matchId, meId, otherName, initial }: {
           }}
           maxLength={MESSAGE_MAX_LENGTH}
           placeholder={`Message ${otherName}`}
-          className="max-h-32 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-[15px] text-haze-100 placeholder:text-haze-500 focus:outline-none"
+          className="max-h-32 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-[15px] text-forest placeholder:text-forest/40 focus:outline-none"
         />
         <button className="btn-primary h-10 px-4" disabled={!text.trim() || sending}>Send</button>
       </form>

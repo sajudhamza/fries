@@ -26,7 +26,7 @@ export default async function PersonPage({ params }: { params: { code: string; i
   return (
     <PublicShell loc={loc}>
       <div className="flex items-center justify-between">
-        <Link href={match ? `/l/${loc.code}/matches/${match.id}` : `/l/${loc.code}/people`} className="text-sm text-haze-300 hover:text-white">
+        <Link href={match ? `/l/${loc.code}/matches/${match.id}` : `/l/${loc.code}/people`} className="text-sm text-forest/70 hover:text-forest">
           ← {match ? "Back to chat" : "Back to Discover"}
         </Link>
         <BlockMenu name={f.name} blockAction={blockProfile.bind(null, loc.code, p.id)} />
@@ -34,8 +34,8 @@ export default async function PersonPage({ params }: { params: { code: string; i
       <div className="mt-4">
         <Avatar name={f.name} photo={p.photo} size="lg" />
       </div>
-      <h1 className="mt-5 font-display text-4xl font-bold">{f.name}{!business && f.age ? <span className="font-normal text-haze-300">, {f.age}</span> : null}</h1>
-      {facts.length > 0 && <p className="mt-1 text-haze-300">{facts.join(" · ")}</p>}
+      <h1 className="mt-5 font-display text-4xl">{f.name}{!business && f.age ? <span className="font-normal text-forest/70">, {f.age}</span> : null}</h1>
+      {facts.length > 0 && <p className="mt-1 text-forest/70">{facts.join(" · ")}</p>}
 
       {f.bio && <p className="mt-6 whitespace-pre-line text-lg leading-relaxed">{f.bio}</p>}
 

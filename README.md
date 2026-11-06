@@ -1,4 +1,6 @@
-# Fries
+# Fries for the Table
+
+> The human connection app. Swipe in person™
 
 Location-scoped social profiles. Every **location** (venue or event) gets its own QR code. Guests scan it,
 record a 15 to 60 second intro video, and the video is turned into their profile. Guests can only see other guests
@@ -76,3 +78,12 @@ the guest fills the form by hand. Transcripts are deleted with the profile.
 ## Dev helper
 
 `node scripts/create-location.mjs "Name" "Venue" 6` adds a location ending in 6 hours to the local file store.
+
+## Brand
+
+Built on the Fries for the Table brand deck: Heritage Green `#1E3A2B` on Cream `#F3EAD7` / Ivory `#FBF6EB`,
+with Sand `#CDB28C`, Brass `#A97A3F` and Tomato `#B4432F`, plus the green/cream checkerboard. Type is Caprasimo
+(logo/display, Cooper-style), Libre Caslon Text (editorial serif and small caps), DM Sans (UI) and Allison
+(the "Swipe in person" script). Tokens live in `tailwind.config.ts` and `src/app/globals.css`; the logo
+lockup, wordmark and app icon are components in `src/components/ui.tsx`. To use the official logo artwork
+instead of the typeset version, export it from Canva as SVG into `public/brand/` and swap it into `LogoLockup`.

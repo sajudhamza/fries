@@ -29,13 +29,13 @@ export default async function ChatPage({ params }: { params: { code: string; id:
 
   return (
     <PublicShell loc={loc}>
-      <div className="sticky top-0 z-20 -mx-4 mb-3 flex items-center gap-3 border-b border-white/10 bg-night-950/90 px-4 py-3 backdrop-blur">
-        <Link href={`/l/${loc.code}/matches`} className="text-xl text-haze-300" aria-label={`Back to ${SWIPE_COPY[loc.eventType].matches}`}>←</Link>
+      <div className="sticky top-0 z-20 -mx-4 mb-3 flex items-center gap-3 border-b border-forest/10 bg-cream/90 px-4 py-3 backdrop-blur">
+        <Link href={`/l/${loc.code}/matches`} className="text-xl text-forest/70" aria-label={`Back to ${SWIPE_COPY[loc.eventType].matches}`}>←</Link>
         <Link href={`/l/${loc.code}/people/${other.id}`} className="flex min-w-0 flex-1 items-center gap-3">
           <span className="block w-9 shrink-0 overflow-hidden rounded-full"><Avatar name={other.fields.name} photo={other.photo} /></span>
           <span className="min-w-0">
             <span className="block truncate font-semibold">{other.fields.name}</span>
-            <span className="block truncate text-xs text-haze-500">{other.fields.occupation || "View profile"}</span>
+            <span className="block truncate text-xs text-forest/55">{other.fields.occupation || "View profile"}</span>
           </span>
         </Link>
         <BlockMenu

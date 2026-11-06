@@ -18,14 +18,14 @@ export default async function MePage({ params, searchParams }: { params: { code:
 
   const f = me.fields;
   const fromVideo = (k: keyof ProfileFields) =>
-    me.extracted.includes(k) ? <span className="ml-2 normal-case tracking-normal text-rose-300">from your video</span> : null;
+    me.extracted.includes(k) ? <span className="ml-2 normal-case tracking-normal text-brass">from your video</span> : null;
   const isLive = me.status === "live";
   const matchmaking = loc.eventType === "matchmaking";
 
   return (
     <PublicShell loc={loc}>
-      <h1 className="mt-2 font-display text-3xl font-bold">{isLive ? "Edit your profile" : "Check your profile"}</h1>
-      <p className="mt-1 text-sm text-haze-300">
+      <h1 className="mt-2 font-display text-[34px] leading-none">{isLive ? "Edit your profile" : "Check your profile"}</h1>
+      <p className="mt-1 text-sm text-forest/70">
         {me.extracted.length > 0
           ? "We filled this in from your intro. Fix anything that's off, then go live."
           : "Fill in anything you'd like people here to know, then go live."}
@@ -39,11 +39,11 @@ export default async function MePage({ params, searchParams }: { params: { code:
         <div className="grid grid-cols-[110px_1fr] items-end gap-4">
           <Avatar name={f.name} photo={me.photo} />
           {me.photo ? (
-            <label className="flex gap-2 text-sm text-haze-300">
-              <input type="checkbox" name="removePhoto" className="h-4 w-4 accent-rose-500" /> Don&apos;t show my photo
+            <label className="flex gap-2 text-sm text-forest/70">
+              <input type="checkbox" name="removePhoto" className="h-4 w-4 accent-forest" /> Don&apos;t show my photo
             </label>
           ) : (
-            <p className="text-sm text-haze-500">No photo. People will see your initial.</p>
+            <p className="text-sm text-forest/55">No photo. People will see your initial.</p>
           )}
         </div>
 
@@ -83,7 +83,7 @@ export default async function MePage({ params, searchParams }: { params: { code:
                 {(Object.keys(INTERESTS) as Interest[]).map((i) => <option key={i} value={i}>{INTERESTS[i]}</option>)}
               </select>
             </label>
-            <p className="col-span-2 -mt-1 text-xs text-haze-500">You&apos;ll only see people you&apos;re interested in who are also interested in you.</p>
+            <p className="col-span-2 -mt-1 text-xs text-forest/55">You&apos;ll only see people you&apos;re interested in who are also interested in you.</p>
           </div>
         )}
         <label className="block">
@@ -97,7 +97,7 @@ export default async function MePage({ params, searchParams }: { params: { code:
         <label className="block">
           <span className="label">Hobbies{fromVideo("hobbies")}</span>
           <input name="hobbies" className="input" defaultValue={f.hobbies.join(", ")} placeholder="climbing, vinyl, natural wine" maxLength={400} />
-          <span className="mt-1 block text-xs text-haze-500">Separate with commas</span>
+          <span className="mt-1 block text-xs text-forest/55">Separate with commas</span>
         </label>
         {!matchmaking && (
           <label className="block">
@@ -119,7 +119,7 @@ export default async function MePage({ params, searchParams }: { params: { code:
       {isLive && <SocialTabs code={loc.code} active="me" matchesLabel={SWIPE_COPY[loc.eventType].matches} initialCount={0} />}
 
       <form action={leaveLocation.bind(null, loc.code)} className="mt-8 text-center">
-        <ConfirmSubmit className="text-sm text-haze-500 underline hover:text-rose-300" message="Delete your profile and intro video now? This can't be undone.">
+        <ConfirmSubmit className="text-sm text-forest/55 underline hover:text-brass" message="Delete your profile and intro video now? This can't be undone.">
           Delete my profile and video now
         </ConfirmSubmit>
       </form>

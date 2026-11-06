@@ -8,8 +8,8 @@ export function BlockMenu({ blockAction, unmatchAction, name }: {
 }) {
   return (
     <details className="relative">
-      <summary className="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full text-xl text-haze-300 hover:bg-white/5" aria-label="More">⋯</summary>
-      <div className="absolute right-0 z-30 mt-2 w-72 space-y-3 rounded-2xl border border-white/10 bg-night-900 p-4 shadow-2xl">
+      <summary className="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-full text-xl text-forest/70 hover:bg-forest/5" aria-label="More">⋯</summary>
+      <div className="absolute right-0 z-30 mt-2 w-72 space-y-3 rounded-2xl border border-forest/10 bg-cream-light p-4 shadow-lift">
         {unmatchAction && (
           <form action={unmatchAction}>
             <ConfirmSubmit className="btn-ghost w-full" message={`Unmatch with ${name}? Your chat will be deleted.`}>Unmatch</ConfirmSubmit>
@@ -28,7 +28,7 @@ export function BlockMenu({ blockAction, unmatchAction, name }: {
             </select>
           </label>
           <ConfirmSubmit className="btn-danger w-full" message={`Block ${name}? You won't see each other again at this event.`}>Block</ConfirmSubmit>
-          <p className="text-xs text-haze-500">Reports go to the event host.</p>
+          <p className="text-xs text-forest/55">Reports go to the event host.</p>
         </form>
       </div>
     </details>

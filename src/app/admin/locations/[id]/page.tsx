@@ -31,7 +31,7 @@ export default async function LocationAdmin({ params, searchParams }: { params: 
   const [profiles, social] = await Promise.all([s.listProfiles(loc.id), s.socialStats(loc.id)]);
   const reported = new Set(social.reported);
   const url = joinUrl(loc.code);
-  const svg = await QRCode.toString(url, { type: "svg", errorCorrectionLevel: "M", margin: 1, color: { dark: "#0B0A10", light: "#FFFFFF" } });
+  const svg = await QRCode.toString(url, { type: "svg", errorCorrectionLevel: "M", margin: 1, color: { dark: "#1E3A2B", light: "#FFFFFF" } });
   const state = locationState(loc);
   const live = profiles.filter((p) => p.status === "live").length;
   const [purgedProfiles, purgedVideos] = (searchParams.purged ?? "").split("-");
@@ -40,13 +40,13 @@ export default async function LocationAdmin({ params, searchParams }: { params: 
     <>
       <AdminHeader />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <Link href="/admin" className="text-sm text-haze-300 hover:text-white">← All locations</Link>
+        <Link href="/admin" className="text-sm text-forest/70 hover:text-forest">← All locations</Link>
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <h1 className="font-display text-3xl font-bold">{loc.name}</h1>
+          <h1 className="font-display text-[34px] leading-none">{loc.name}</h1>
           <StatusPill tone={state}>{state === "live" ? "Live" : state === "scheduled" ? "Scheduled" : "Ended"}</StatusPill>
           <StatusPill tone="muted">{EVENT_TYPES[loc.eventType].label} event</StatusPill>
         </div>
-        <p className="mt-1 text-sm text-haze-300">
+        <p className="mt-1 text-sm text-forest/70">
           {loc.venue || "No venue set"} · {state === "ended" ? <>ended <LocalTime iso={loc.endedAt ?? loc.endsAt} /></> : <>data deletes <LocalTime iso={loc.endsAt} /> (<LocalTime iso={loc.endsAt} mode="relative" />)</>}
         </p>
 
@@ -63,7 +63,7 @@ export default async function LocationAdmin({ params, searchParams }: { params: 
         <div className="mt-6 grid gap-6 lg:grid-cols-[380px_1fr]">
           <section className="card p-5">
             <div className="rounded-2xl bg-white p-4 [&_svg]:h-auto [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} />
-            <p className="mt-4 break-all rounded-lg bg-night-800 px-3 py-2 font-mono text-xs text-haze-300">{url}</p>
+            <p className="mt-4 break-all rounded-lg bg-cream-light px-3 py-2 font-mono text-xs text-forest/70">{url}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <a href={`/admin/locations/${loc.id}/qr?format=png`} className="btn-primary">Download PNG</a>
               <a href={`/admin/locations/${loc.id}/qr?format=svg`} className="btn-ghost">SVG</a>
@@ -74,39 +74,39 @@ export default async function LocationAdmin({ params, searchParams }: { params: 
               <a href={url} target="_blank" className="btn-ghost">Open public page ↗</a>
             </div>
             {url.includes("localhost") && (
-              <p className="mt-4 text-xs text-haze-500">This QR points at localhost, so phones can&apos;t open it. Set NEXT_PUBLIC_APP_URL to your LAN IP or deployed domain.</p>
+              <p className="mt-4 text-xs text-forest/55">This QR points at localhost, so phones can&apos;t open it. Set NEXT_PUBLIC_APP_URL to your LAN IP or deployed domain.</p>
             )}
           </section>
 
           <div className="space-y-6">
             <section className="card p-5">
               <div className="flex items-baseline justify-between">
-                <h2 className="font-display text-xl font-bold">People at this location</h2>
-                <span className="text-sm text-haze-300">{live} live · {profiles.length} total</span>
+                <h2 className="font-display text-xl">People at this location</h2>
+                <span className="text-sm text-forest/70">{live} live · {profiles.length} total</span>
               </div>
-              <p className="mt-1 text-sm text-haze-500">
+              <p className="mt-1 text-sm text-forest/55">
                 {social.likes} {social.likes === 1 ? "like" : "likes"} · {social.matches} {social.matches === 1 ? "match" : "matches"} · {social.messages} {social.messages === 1 ? "message" : "messages"}
               </p>
               {profiles.length === 0 ? (
-                <p className="mt-3 text-sm text-haze-500">Nobody has scanned this code yet.</p>
+                <p className="mt-3 text-sm text-forest/55">Nobody has scanned this code yet.</p>
               ) : (
-                <ul className="mt-3 divide-y divide-white/5">
+                <ul className="mt-3 divide-y divide-forest/10">
                   {profiles.map((p) => (
                     <li key={p.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                       <span className="truncate">
-                        {p.fields.name || <span className="text-haze-500">Unnamed</span>}
+                        {p.fields.name || <span className="text-forest/55">Unnamed</span>}
                         {loc.eventType === "matchmaking" && p.fields.gender && (
-                          <span className="ml-2 text-xs text-haze-500">
+                          <span className="ml-2 text-xs text-forest/55">
                             {GENDERS[p.fields.gender]}{p.fields.interestedIn ? `, into ${INTERESTS[p.fields.interestedIn].toLowerCase()}` : ""}
                           </span>
                         )}
                       </span>
-                      <span className="flex shrink-0 items-center gap-3 text-haze-500">
-                        {reported.has(p.id) && <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-xs font-semibold text-rose-300">Reported</span>}
+                      <span className="flex shrink-0 items-center gap-3 text-forest/55">
+                        {reported.has(p.id) && <span className="rounded-full bg-forest/10 px-2 py-0.5 text-xs font-semibold text-brass">Reported</span>}
                         <StatusPill tone={p.status === "live" ? "live" : "muted"}>{STATUS_LABEL[p.status]}</StatusPill>
                         <LocalTime iso={p.createdAt} mode="time" />
                         <form action={removeProfile.bind(null, loc.id, p.id)}>
-                          <ConfirmSubmit className="text-xs text-haze-500 underline hover:text-rose-300" message={`Remove ${p.fields.name || "this guest"} from the event? Their profile, video, matches and messages are deleted.`}>
+                          <ConfirmSubmit className="text-xs text-forest/55 underline hover:text-brass" message={`Remove ${p.fields.name || "this guest"} from the event? Their profile, video, matches and messages are deleted.`}>
                             Remove
                           </ConfirmSubmit>
                         </form>
@@ -118,7 +118,7 @@ export default async function LocationAdmin({ params, searchParams }: { params: 
             </section>
 
             <form action={updateLocation.bind(null, loc.id)} className="card grid gap-4 p-5 sm:grid-cols-2">
-              <h2 className="font-display text-xl font-bold sm:col-span-2">Details</h2>
+              <h2 className="font-display text-xl sm:col-span-2">Details</h2>
               <label className="block">
                 <span className="label">Name</span>
                 <input name="name" className="input" defaultValue={loc.name} required maxLength={80} />
@@ -130,7 +130,7 @@ export default async function LocationAdmin({ params, searchParams }: { params: 
               <div className="sm:col-span-2">
                 <EventTypePicker defaultValue={loc.eventType} />
                 {loc.eventType !== "matchmaking" && (
-                  <p className="mt-2 text-xs text-haze-500">Switching to Matchmaking mid-event asks guests who are already live to add their preferences before they can keep browsing.</p>
+                  <p className="mt-2 text-xs text-forest/55">Switching to Matchmaking mid-event asks guests who are already live to add their preferences before they can keep browsing.</p>
                 )}
               </div>
               <DateTimeField name="startsAt" label="Starts (optional)" defaultValue={loc.startsAt} />
@@ -140,9 +140,9 @@ export default async function LocationAdmin({ params, searchParams }: { params: 
               </div>
             </form>
 
-            <section className="card border-rose-500/20 p-5">
-              <h2 className="font-display text-xl font-bold">Danger zone</h2>
-              <p className="mt-1 text-sm text-haze-300">Closing the event permanently deletes every intro video and profile at this location. This can&apos;t be undone.</p>
+            <section className="card border-tomato/20 p-5">
+              <h2 className="font-display text-xl">Danger zone</h2>
+              <p className="mt-1 text-sm text-forest/70">Closing the event permanently deletes every intro video and profile at this location. This can&apos;t be undone.</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {state !== "ended" && (
                   <form action={endEventNow.bind(null, loc.id)}>

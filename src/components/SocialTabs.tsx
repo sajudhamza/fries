@@ -27,16 +27,16 @@ export function SocialTabs({ code, active, matchesLabel, initialCount }: {
       href={href}
       className={clsx(
         "relative flex-1 rounded-full py-2 text-center text-sm font-semibold transition",
-        active === key ? "bg-white/10 text-white" : "text-haze-300 hover:text-white",
+        active === key ? "bg-cream text-forest" : "text-cream/75 hover:text-cream",
       )}
     >
       {label}
-      {badge ? <span className="ml-1.5 inline-grid h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1.5 text-[11px] text-white">{badge}</span> : null}
+      {badge ? <span className="ml-1.5 inline-grid h-5 min-w-5 place-items-center rounded-full bg-tomato px-1.5 text-[11px] text-cream">{badge}</span> : null}
     </Link>
   );
 
   return (
-    <nav className="sticky bottom-3 z-20 mx-auto mt-6 flex max-w-sm gap-1 rounded-full border border-white/10 bg-night-900/90 p-1 backdrop-blur">
+    <nav className="sticky bottom-3 z-20 mx-auto mt-6 flex max-w-sm gap-1 rounded-full bg-forest p-1 shadow-lift">
       {tab("deck", `/l/${code}/people`, "Discover")}
       {tab("matches", `/l/${code}/matches`, matchesLabel, count)}
       {tab("me", `/l/${code}/me`, "You")}

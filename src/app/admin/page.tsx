@@ -32,14 +32,14 @@ export default async function AdminHome({ searchParams }: { searchParams: { erro
         <section>
           <div className="mb-5 flex items-end justify-between">
             <div>
-              <h1 className="font-display text-3xl font-bold">Locations</h1>
-              <p className="mt-1 text-sm text-haze-300">Each location has its own QR code. People only see others who joined through the same code.</p>
+              <h1 className="font-display text-[34px] leading-none">Locations</h1>
+              <p className="mt-1 text-sm text-forest/70">Each location has its own QR code. People only see others who joined through the same code.</p>
             </div>
           </div>
           {locations.length === 0 ? (
             <div className="card grid place-items-center px-6 py-16 text-center">
               <p className="font-display text-xl">No locations yet</p>
-              <p className="mt-1 max-w-xs text-sm text-haze-300">Add your first venue or event on the right to generate its QR code.</p>
+              <p className="mt-1 max-w-xs text-sm text-forest/70">Add your first venue or event on the right to generate its QR code.</p>
             </div>
           ) : (
             <ul className="space-y-3">
@@ -48,20 +48,20 @@ export default async function AdminHome({ searchParams }: { searchParams: { erro
                 const c = counts[l.id];
                 return (
                   <li key={l.id}>
-                    <Link href={`/admin/locations/${l.id}`} className="card flex items-center gap-4 p-4 transition hover:border-white/25">
+                    <Link href={`/admin/locations/${l.id}`} className="card flex items-center gap-4 p-4 transition hover:border-forest/25">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="truncate font-semibold">{l.name}</span>
                           <StatusPill tone={state}>{state === "live" ? "Live" : state === "scheduled" ? "Scheduled" : "Ended"}</StatusPill>
                           <StatusPill tone="muted">{EVENT_TYPES[l.eventType].label}</StatusPill>
                         </div>
-                        <p className="mt-0.5 truncate text-sm text-haze-500">
+                        <p className="mt-0.5 truncate text-sm text-forest/55">
                           {l.venue || "No venue set"} · {state === "ended" ? "ended" : "ends"} <LocalTime iso={l.endedAt ?? l.endsAt} />
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className="font-display text-2xl font-bold">{c?.live ?? 0}</div>
-                        <div className="text-xs text-haze-500">live profiles</div>
+                        <div className="font-display text-2xl">{c?.live ?? 0}</div>
+                        <div className="text-xs text-forest/55">live profiles</div>
                       </div>
                     </Link>
                   </li>
@@ -73,7 +73,7 @@ export default async function AdminHome({ searchParams }: { searchParams: { erro
 
         <aside>
           <form action={createLocation} className="card space-y-4 p-5 lg:sticky lg:top-6">
-            <h2 className="font-display text-xl font-bold">Add a location</h2>
+            <h2 className="font-display text-xl">Add a location</h2>
             {searchParams.error && <Notice tone="error">{ERRORS[searchParams.error] ?? "Something went wrong."}</Notice>}
             <label className="block">
               <span className="label">Name</span>

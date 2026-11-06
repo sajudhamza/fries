@@ -30,7 +30,7 @@ export default async function DiscoverPage({ params }: { params: { code: string 
 
   return (
     <PublicShell loc={loc}>
-      <h1 className="mt-2 font-display text-3xl font-bold">{copy.deck}</h1>
+      <h1 className="mt-2 font-display text-[34px] leading-none">{copy.deck}</h1>
       <SwipeDeck
         key={deck.map((p) => p.id).join(",")}
         code={loc.code}

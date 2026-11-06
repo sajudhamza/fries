@@ -253,25 +253,25 @@ export function VideoCapture({ code, fields, resume = false }: { code: string; f
 
   return (
     <div className="space-y-5">
-      <div className="relative mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-3xl bg-night-800">
+      <div className="relative mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-3xl bg-forest bg-candle text-cream shadow-lift">
         {phase === "recording" && (
           <>
             <video ref={liveRef} muted playsInline className="h-full w-full -scale-x-100 object-cover" />
-            <div className="absolute inset-x-0 top-0 h-1 bg-white/15">
-              <div className="h-full bg-rose-500 transition-[width] duration-200" style={{ width: `${Math.min(100, (elapsed / VIDEO_MAX_SECONDS) * 100)}%` }} />
+            <div className="absolute inset-x-0 top-0 h-1 bg-cream/20">
+              <div className="h-full bg-sand transition-[width] duration-200" style={{ width: `${Math.min(100, (elapsed / VIDEO_MAX_SECONDS) * 100)}%` }} />
             </div>
-            <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-sm font-semibold">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-rose-500" /> {fmt(elapsed)} / {fmt(VIDEO_MAX_SECONDS)}
+            <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-forest-ink/70 px-3 py-1 text-sm font-semibold text-cream">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-tomato" /> {fmt(elapsed)} / {fmt(VIDEO_MAX_SECONDS)}
             </div>
-            <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-black/60 p-3 backdrop-blur">
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/60">Try to mention</p>
+            <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-forest-ink/70 p-3 backdrop-blur">
+              <p className="mb-1.5 font-serif text-[10px] font-bold uppercase tracking-caps text-sand">Try to mention</p>
               <ul className="flex flex-wrap gap-1.5">
                 {fields.map((f, i) => (
                   <li
                     key={f.key}
                     className={clsx(
                       "rounded-full px-2.5 py-1 text-xs transition",
-                      elapsed > i * (VIDEO_MAX_SECONDS / fields.length / 1.5) ? "bg-white/20 text-white" : "bg-white/5 text-white/50",
+                      elapsed > i * (VIDEO_MAX_SECONDS / fields.length / 1.5) ? "bg-cream text-forest" : "bg-cream/10 text-cream/60",
                     )}
                   >
                     {f.label}
@@ -284,10 +284,10 @@ export function VideoCapture({ code, fields, resume = false }: { code: string; f
 
         {(phase === "choose" || phase === "failed") && (
           <div className="flex h-full flex-col justify-center gap-3 overflow-y-auto p-6">
-            <p className="font-display text-2xl font-bold">Say hi in {VIDEO_MIN_SECONDS} to {VIDEO_MAX_SECONDS} seconds</p>
-            <p className="text-sm text-haze-300">We fill in your profile from what you say. Try to mention:</p>
-            <ul className="space-y-1 text-sm">
-              {fields.map((f) => <li key={f.key} className="flex gap-2"><span className="text-rose-400">•</span>{f.clue}</li>)}
+            <p className="font-display text-[30px] leading-[0.95] text-cream">Say hi in {VIDEO_MIN_SECONDS} to {VIDEO_MAX_SECONDS} seconds</p>
+            <p className="text-sm text-cream/75">We fill in your profile from what you say. Try to mention:</p>
+            <ul className="space-y-1 text-sm text-cream/90">
+              {fields.map((f) => <li key={f.key} className="flex gap-2"><span className="text-sand">•</span>{f.clue}</li>)}
             </ul>
           </div>
         )}
@@ -295,12 +295,12 @@ export function VideoCapture({ code, fields, resume = false }: { code: string; f
         {busy && <ProcessingView step={step} progress={progress} fields={fields} filled={result?.filled ?? null} revealed={revealed} />}
       </div>
 
-      {error && <p role="alert" className="mx-auto max-w-sm rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</p>}
+      {error && <p role="alert" className="mx-auto max-w-sm rounded-xl border border-tomato/40 bg-tomato/10 px-4 py-3 text-sm text-tomato">{error}</p>}
 
       <div className="mx-auto flex max-w-sm flex-col gap-2">
         {phase === "choose" && (
           <>
-            <button className="btn-primary py-3.5 text-base" onClick={startRecording}>● Record now</button>
+            <button className="btn-primary py-3.5 text-base" onClick={startRecording}><span className="h-2.5 w-2.5 rounded-full bg-tomato" /> Record now</button>
             <label className="btn-ghost cursor-pointer py-3.5 text-base">
               Upload a video
               <input type="file" accept="video/*" className="sr-only" onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = ""; }} />
@@ -310,7 +310,7 @@ export function VideoCapture({ code, fields, resume = false }: { code: string; f
         {phase === "recording" && (
           <>
             <button className="btn-primary py-3.5 text-base" onClick={stopRecording}>■ Stop &amp; continue</button>
-            <p className="text-center text-xs text-haze-500">
+            <p className="text-center text-xs text-forest/55">
               {canStop ? "Stop whenever you're done." : `At least ${VIDEO_MIN_SECONDS} seconds needed (${Math.ceil(VIDEO_MIN_SECONDS - elapsed)}s to go).`}
             </p>
           </>
@@ -321,7 +321,7 @@ export function VideoCapture({ code, fields, resume = false }: { code: string; f
             <button className="btn-ghost" onClick={() => { clipRef.current = null; setError(null); setPhase("choose"); }}>Record a new one</button>
           </>
         )}
-        {busy && !result && <p className="text-center text-xs text-haze-500">Keep this page open. This usually takes under a minute.</p>}
+        {busy && !result && <p className="text-center text-xs text-forest/55">Keep this page open. This usually takes under a minute.</p>}
         {result && revealed >= fields.length && (
           <button className="btn-primary py-3.5 text-base" onClick={() => router.push(result.next)}>Continue</button>
         )}
@@ -343,19 +343,19 @@ function ProcessingView({
   const current = done ? STEPS.length : STEPS.findIndex((s) => s.key === step);
   const filledCount = filled ? fields.filter((f) => filled.includes(f.key)).length : 0;
   return (
-    <div className="absolute inset-0 flex flex-col gap-4 overflow-y-auto bg-night-900 p-5" aria-live="polite">
+    <div className="absolute inset-0 flex flex-col gap-4 overflow-y-auto bg-forest bg-candle p-5 text-cream" aria-live="polite">
       <div className="flex items-center gap-3">
         <div className="relative h-10 w-10 shrink-0">
-          <div className="absolute inset-0 rounded-full border-[3px] border-white/10" />
+          <div className="absolute inset-0 rounded-full border-[3px] border-cream/15" />
           {done ? (
-            <span className="absolute inset-0 grid place-items-center rounded-full bg-emerald-400/20 text-lg text-emerald-300">✓</span>
+            <span className="absolute inset-0 grid place-items-center rounded-full bg-cream text-lg text-forest">✓</span>
           ) : (
-            <div className="absolute inset-0 animate-spin rounded-full border-[3px] border-transparent border-t-rose-500" />
+            <div className="absolute inset-0 animate-spin rounded-full border-[3px] border-transparent border-t-sand" />
           )}
         </div>
         <div>
-          <p className="font-display text-lg font-bold leading-tight">{done ? "Your profile is ready" : "Processing your intro"}</p>
-          <p className="text-xs text-haze-300">
+          <p className="font-display text-xl leading-tight">{done ? "Your profile is ready" : "Processing your intro"}</p>
+          <p className="text-xs text-cream/70">
             {!done && step === "upload" ? `Uploading ${Math.round(progress * 100)}%` : done ? `${filledCount} of ${fields.length} filled from your video` : "Hang tight, this takes a moment."}
           </p>
         </div>
@@ -364,8 +364,8 @@ function ProcessingView({
       <ol className="flex gap-1.5">
         {STEPS.map((s, i) => (
           <li key={s.key} className="flex-1">
-            <div className={clsx("h-1 rounded-full", i < current ? "bg-emerald-400/70" : i === current ? "animate-pulse bg-rose-500" : "bg-white/10")} />
-            <p className={clsx("mt-1 text-[11px]", i <= current ? "text-haze-300" : "text-haze-500")}>{s.label}</p>
+            <div className={clsx("h-1 rounded-full", i < current ? "bg-sand" : i === current ? "animate-pulse bg-cream" : "bg-cream/15")} />
+            <p className={clsx("mt-1 text-[11px]", i <= current ? "text-cream/80" : "text-cream/45")}>{s.label}</p>
           </li>
         ))}
       </ol>
@@ -379,15 +379,15 @@ function ProcessingView({
               <span
                 className={clsx(
                   "grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] font-bold transition",
-                  ok && "bg-emerald-400/20 text-emerald-300",
-                  shown && !ok && "bg-white/5 text-haze-500",
-                  !shown && "bg-white/5",
+                  ok && "bg-sand text-forest",
+                  shown && !ok && "bg-cream/10 text-cream/50",
+                  !shown && "bg-cream/10",
                 )}
               >
-                {ok ? "✓" : shown ? "–" : <span className={clsx("h-1.5 w-1.5 rounded-full bg-white/25", !done && "animate-pulse")} />}
+                {ok ? "✓" : shown ? "–" : <span className={clsx("h-1.5 w-1.5 rounded-full bg-cream/30", !done && "animate-pulse")} />}
               </span>
-              <span className={clsx(ok ? "text-white" : shown ? "text-haze-500" : "text-haze-300")}>{f.label}</span>
-              {shown && !ok && <span className="ml-auto text-[11px] text-haze-500">add next</span>}
+              <span className={clsx(ok ? "text-cream" : shown ? "text-cream/50" : "text-cream/75")}>{f.label}</span>
+              {shown && !ok && <span className="ml-auto font-serif text-[11px] italic text-sand">add next</span>}
             </li>
           );
         })}

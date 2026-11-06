@@ -13,16 +13,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const url = joinUrl(loc.code);
   const slug = loc.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "location";
-  const opts = { errorCorrectionLevel: "M" as const, margin: 2, color: { dark: "#0B0A10", light: "#FFFFFF" } };
+  const opts = { errorCorrectionLevel: "M" as const, margin: 2, color: { dark: "#1E3A2B", light: "#FFFFFF" } };
 
   if (req.nextUrl.searchParams.get("format") === "svg") {
     const svg = await QRCode.toString(url, { ...opts, type: "svg" });
     return new NextResponse(svg, {
-      headers: { "Content-Type": "image/svg+xml", "Content-Disposition": `attachment; filename="fries-${slug}.svg"` },
+      headers: { "Content-Type": "image/svg+xml", "Content-Disposition": `attachment; filename="fries-for-the-table-${slug}.svg"` },
     });
   }
   const png = await QRCode.toBuffer(url, { ...opts, type: "png", width: 1200 });
   return new NextResponse(png, {
-    headers: { "Content-Type": "image/png", "Content-Disposition": `attachment; filename="fries-${slug}.png"` },
+    headers: { "Content-Type": "image/png", "Content-Disposition": `attachment; filename="fries-for-the-table-${slug}.png"` },
   });
 }

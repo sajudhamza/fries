@@ -98,8 +98,8 @@ export function SwipeDeck({ code, cards, likeLabel, passLabel, matchedTitle, res
   if (!card) {
     return (
       <div className="card mx-auto mt-4 grid max-w-sm place-items-center gap-4 px-6 py-14 text-center">
-        <p className="font-display text-2xl font-bold">You&apos;ve seen everyone</p>
-        <p className="text-sm text-haze-300">New people show up here as they join the event.</p>
+        <p className="font-display text-3xl leading-none">You&apos;ve seen everyone</p>
+        <p className="text-sm text-forest/70">New people show up here as they join the event.</p>
         <div className="flex flex-wrap justify-center gap-2">
           <button className="btn-primary" onClick={() => { setIndex(0); router.refresh(); }}>Check for new people</button>
           <form action={resetAction}>
@@ -118,7 +118,7 @@ export function SwipeDeck({ code, cards, likeLabel, passLabel, matchedTitle, res
 
   return (
     <div className="mx-auto mt-1 max-w-sm select-none">
-      <p className="mb-3 text-right text-sm text-haze-500">{cards.length - index} to go</p>
+      <p className="mb-3 text-right text-sm text-forest/55">{cards.length - index} to go</p>
       <div className="relative aspect-[3/4] w-full">
         {next && <CardFace card={next} className="scale-[0.96] opacity-70" />}
         <div
@@ -134,10 +134,10 @@ export function SwipeDeck({ code, cards, likeLabel, passLabel, matchedTitle, res
           onLostPointerCapture={(e) => start.current && onPointerUp(e)}
         >
           <CardFace card={card} details={details} />
-          <span className="pointer-events-none absolute left-5 top-6 -rotate-12 rounded-lg border-4 border-emerald-400 px-3 py-1 text-2xl font-black uppercase text-emerald-400" style={{ opacity: likeOpacity }}>
+          <span className="pointer-events-none absolute left-5 top-6 -rotate-12 rounded-xl border-[3px] border-cream bg-forest/80 px-3 py-1 font-display text-2xl uppercase text-cream" style={{ opacity: likeOpacity }}>
             {likeLabel}
           </span>
-          <span className="pointer-events-none absolute right-5 top-6 rotate-12 rounded-lg border-4 border-rose-400 px-3 py-1 text-2xl font-black uppercase text-rose-400" style={{ opacity: passOpacity }}>
+          <span className="pointer-events-none absolute right-5 top-6 rotate-12 rounded-xl border-[3px] border-cream bg-tomato/85 px-3 py-1 font-display text-2xl uppercase text-cream" style={{ opacity: passOpacity }}>
             {passLabel}
           </span>
         </div>
@@ -147,26 +147,26 @@ export function SwipeDeck({ code, cards, likeLabel, passLabel, matchedTitle, res
         <button
           aria-label={passLabel}
           onClick={() => decide("pass")}
-          className="grid h-16 w-16 place-items-center rounded-full border border-white/15 bg-night-800 text-2xl text-rose-300 transition hover:scale-105 active:scale-95"
+          className="grid h-16 w-16 place-items-center rounded-full border border-forest/15 bg-cream-light text-2xl text-tomato shadow-card transition hover:scale-105 active:scale-95"
         >
           ✕
         </button>
         <button
           aria-label="Details"
           onClick={() => setDetails((d) => !d)}
-          className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-night-800 text-sm font-bold text-haze-300 transition hover:scale-105"
+          className="grid h-11 w-11 place-items-center rounded-full border border-forest/15 bg-cream-light font-serif text-sm font-bold italic text-forest/70 transition hover:scale-105"
         >
           i
         </button>
         <button
           aria-label={likeLabel}
           onClick={() => decide("like")}
-          className="grid h-16 w-16 place-items-center rounded-full bg-rose-500 text-2xl text-white shadow-lg shadow-rose-500/30 transition hover:scale-105 active:scale-95"
+          className="grid h-16 w-16 place-items-center rounded-full bg-forest text-2xl text-cream shadow-lift transition hover:scale-105 active:scale-95"
         >
           ♥
         </button>
       </div>
-      <p className="mt-3 text-center text-xs text-haze-500">Swipe right to {likeLabel.toLowerCase()}, left to {passLabel.toLowerCase()}. Tap the card for more.</p>
+      <p className="mt-3 text-center text-xs text-forest/55">Swipe right to {likeLabel.toLowerCase()}, left to {passLabel.toLowerCase()}. Tap the card for more.</p>
 
       {match && <MatchOverlay code={code} match={match} title={matchedTitle} onClose={() => setMatch(null)} />}
     </div>
@@ -175,41 +175,41 @@ export function SwipeDeck({ code, cards, likeLabel, passLabel, matchedTitle, res
 
 function CardFace({ card, details = false, className }: { card: DeckCard; details?: boolean; className?: string }) {
   return (
-    <div className={clsx("absolute inset-0 overflow-hidden rounded-3xl border border-white/10 bg-night-800 shadow-2xl", className)}>
+    <div className={clsx("absolute inset-0 overflow-hidden rounded-3xl bg-forest shadow-lift", className)}>
       {card.photo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={card.photo} alt="" draggable={false} className="h-full w-full object-cover" />
       ) : (
-        <div className="grid h-full w-full place-items-center bg-gradient-to-br from-rose-500/40 to-night-700 font-display text-8xl font-bold text-white/90">
+        <div className="grid h-full w-full place-items-center bg-forest bg-candle font-display text-[150px] text-cream/90">
           {(card.name || "?").slice(0, 1).toUpperCase()}
         </div>
       )}
-      <div className={clsx("absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-5 pt-20 transition-all", details && "top-0 overflow-y-auto bg-black/85 pt-6")}>
-        <p className="font-display text-3xl font-bold leading-tight">
+      <div className={clsx("absolute inset-x-0 bottom-0 bg-gradient-to-t from-forest-ink/95 via-forest-deep/75 to-transparent p-5 pt-24 text-cream transition-all", details && "top-0 overflow-y-auto bg-forest-deep/95 pt-6")}>
+        <p className="font-display text-[34px] leading-none">
           {card.name}
-          {card.age ? <span className="font-normal text-white/80">, {card.age}</span> : null}
+          {card.age ? <span className="text-sand">, {card.age}</span> : null}
         </p>
-        {card.facts.length > 0 && <p className="mt-1 text-sm text-white/75">{card.facts.join(" · ")}</p>}
+        {card.facts.length > 0 && <p className="mt-2 font-serif text-sm italic text-cream/80">{card.facts.join(" · ")}</p>}
         {details ? (
           <div className="mt-4 space-y-4 text-sm">
-            {card.bio && <p className="leading-relaxed text-white/90">{card.bio}</p>}
+            {card.bio && <p className="font-serif text-base leading-relaxed text-cream/95">{card.bio}</p>}
             {card.lookingFor && (
               <div>
-                <p className="label">Looking for</p>
-                <p className="text-white/90">{card.lookingFor}</p>
+                <p className="mb-1 font-serif text-[10px] font-bold uppercase tracking-caps text-sand">Looking for</p>
+                <p className="text-cream/90">{card.lookingFor}</p>
               </div>
             )}
             {card.hobbies.length > 0 && (
               <div>
-                <p className="label">Into</p>
-                <div className="flex flex-wrap gap-1.5">{card.hobbies.map((h) => <span key={h} className="chip">{h}</span>)}</div>
+                <p className="mb-1.5 font-serif text-[10px] font-bold uppercase tracking-caps text-sand">Into</p>
+                <div className="flex flex-wrap gap-1.5">{card.hobbies.map((h) => <span key={h} className="rounded-full bg-cream/15 px-3 py-1 text-xs text-cream">{h}</span>)}</div>
               </div>
             )}
           </div>
         ) : (
           card.hobbies.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {card.hobbies.slice(0, 3).map((h) => <span key={h} className="chip bg-white/15">{h}</span>)}
+              {card.hobbies.slice(0, 3).map((h) => <span key={h} className="rounded-full bg-cream/15 px-3 py-1 text-xs text-cream">{h}</span>)}
             </div>
           )
         )}
@@ -222,23 +222,24 @@ function MatchOverlay({ code, match, title, onClose }: {
   code: string; match: { matchId: string; name: string; photo: string | null }; title: string; onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-night-950/90 p-6 backdrop-blur" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-forest/95 bg-candle p-6 text-cream backdrop-blur" role="dialog" aria-modal="true">
       <div className="w-full max-w-xs text-center">
-        <p className="font-display text-4xl font-bold text-rose-300">{title}</p>
-        <p className="mt-2 text-haze-300">You and {match.name} liked each other.</p>
-        <div className="mx-auto mt-6 h-40 w-32 overflow-hidden rounded-2xl border-2 border-rose-400">
+        <p className="font-display text-5xl leading-none text-cream">{title}</p>
+        <p className="mt-3 font-serif italic text-cream/80">You and {match.name} liked each other.</p>
+        <div className="mx-auto mt-7 h-44 w-36 -rotate-3 overflow-hidden rounded-2xl border-4 border-cream shadow-lift">
           {match.photo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={match.photo} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="grid h-full w-full place-items-center bg-gradient-to-br from-rose-500/40 to-night-700 font-display text-5xl font-bold">
+            <div className="grid h-full w-full place-items-center bg-sand font-display text-6xl text-forest">
               {(match.name || "?").slice(0, 1)}
             </div>
           )}
         </div>
-        <div className="mt-8 grid gap-2">
-          <Link href={`/l/${code}/matches/${match.matchId}`} className="btn-primary py-3.5 text-base">Say hi</Link>
-          <button className="btn-ghost" onClick={onClose}>Keep swiping</button>
+        <p className="mt-6 font-script text-4xl leading-none text-sand">Go say hi in person</p>
+        <div className="mt-6 grid gap-2">
+          <Link href={`/l/${code}/matches/${match.matchId}`} className="btn-cream py-3.5 text-base">Say hi</Link>
+          <button className="btn border border-cream/30 text-cream hover:bg-cream/10" onClick={onClose}>Keep swiping</button>
         </div>
       </div>
     </div>
