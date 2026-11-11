@@ -20,9 +20,10 @@ phone polls until the profile moves to review (or falls back to the manual form 
 ./worker/deploy.sh
 ```
 
-Creates the ECR repo, execution role and a 10 GB / 6 vCPU, 600 s function (falls back to 3008 MB on new
-accounts with the default quota), then prints the env vars and IAM policy to add in Amplify. Re-run it to
-ship changes. Cost is roughly 1 to 2 cents per video; nothing when idle.
+Works with Docker or Podman (it uses Docker if installed, otherwise Podman; `ENGINE=podman ./worker/deploy.sh`
+to force it; start Podman first with `podman machine start`). Creates the ECR repo, execution role and a 10 GB / 6 vCPU, 600 s function (falls back to 3008 MB on new
+accounts with the default quota), then prints the env vars and IAM policy to add in Amplify. It also schedules a keep-warm ping every
+5 minutes (`{"warmup": true}` loads both models), so guests don't hit a cold start. Re-run it to ship changes. Cost is roughly 1 to 2 cents per video; nothing when idle.
 
 Swap models with build args, e.g. a faster but less accurate transcriber, or the Qwen3 fallback:
 
@@ -34,8 +35,8 @@ docker build --platform linux/amd64 --build-arg WHISPER_REPO=Systran/faster-whis
 ## Run locally
 
 ```bash
-docker build --platform linux/amd64 -t fries-worker worker/
-docker run --rm -p 9000:8080 fries-worker
+docker build --platform linux/amd64 -t fries-worker worker/     # or: podman build --platform linux/amd64 --format docker ...
+docker run --rm -p 9000:8080 fries-worker                        # or: podman run ...
 ```
 
 Then in the app's `.env.local`:

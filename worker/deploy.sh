@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Builds the worker image, pushes it to Amazon ECR and creates/updates the Lambda function.
-# Needs: Docker running, AWS CLI v2 signed in (aws configure / aws sso login).
+# Needs: Docker or Podman running, AWS CLI v2 signed in (aws configure / aws sso login).
+# Uses Docker when available, otherwise Podman; force one with ENGINE=podman or ENGINE=docker.
 #   ./worker/deploy.sh                       # defaults below
 #   MEMORY=3008 REGION=eu-west-1 ./worker/deploy.sh
 set -euo pipefail
@@ -15,6 +16,16 @@ REPO="fries-profile-worker"
 ROLE="fries-profile-worker-role"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
+ENGINE="${ENGINE:-$(command -v docker >/dev/null 2>&1 && echo docker || echo podman)}"
+if [ "$ENGINE" = "podman" ]; then
+  # Lambda wants a single-arch image with a Docker v2 manifest; Podman builds that with --format docker.
+  BUILD_FLAGS=(--platform linux/amd64 --format docker)
+else
+  # --provenance=false: Lambda rejects the multi-manifest images buildx makes by default.
+  BUILD_FLAGS=(--platform linux/amd64 --provenance=false)
+fi
+echo "Container engine: $ENGINE"
+
 ACCOUNT="$(aws sts get-caller-identity --query Account --output text)"
 REGISTRY="$ACCOUNT.dkr.ecr.$REGION.amazonaws.com"
 IMAGE="$REGISTRY/$REPO:$(date +%Y%m%d%H%M%S)"
@@ -22,11 +33,10 @@ echo "Account $ACCOUNT, region $REGION, function $FUNCTION"
 
 aws ecr describe-repositories --repository-names "$REPO" --region "$REGION" >/dev/null 2>&1 \
   || aws ecr create-repository --repository-name "$REPO" --region "$REGION" >/dev/null
-aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$REGISTRY"
+aws ecr get-login-password --region "$REGION" | "$ENGINE" login --username AWS --password-stdin "$REGISTRY"
 
-# --provenance=false: Lambda rejects the multi-manifest images buildx makes by default.
-docker build --platform linux/amd64 --provenance=false -t "$IMAGE" "$HERE"
-docker push "$IMAGE"
+"$ENGINE" build "${BUILD_FLAGS[@]}" -t "$IMAGE" "$HERE"
+"$ENGINE" push "$IMAGE"
 
 if ! aws iam get-role --role-name "$ROLE" >/dev/null 2>&1; then
   echo "Creating execution role $ROLE"
