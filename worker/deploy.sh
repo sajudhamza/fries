@@ -3,7 +3,7 @@
 # Needs: Docker or Podman running, AWS CLI v2 signed in (aws configure / aws sso login).
 # Uses Docker when available, otherwise Podman; force one with ENGINE=podman or ENGINE=docker.
 #   ./worker/deploy.sh                       # defaults below
-#   MEMORY=3008 REGION=eu-west-1 ./worker/deploy.sh
+#   MEMORY=3008 REGION=eu-west-1 ./worker/deploy.sh   # memory is applied on create and on update
 set -euo pipefail
 
 FUNCTION="${FUNCTION:-fries-profile-worker}"
@@ -50,6 +50,18 @@ ROLE_ARN="$(aws iam get-role --role-name "$ROLE" --query Role.Arn --output text)
 if aws lambda get-function --function-name "$FUNCTION" --region "$REGION" >/dev/null 2>&1; then
   echo "Updating $FUNCTION"
   aws lambda update-function-code --function-name "$FUNCTION" --image-uri "$IMAGE" --region "$REGION" >/dev/null
+  # Lambda refuses a config change while the code update is still in progress.
+  aws lambda wait function-updated-v2 --function-name "$FUNCTION" --region "$REGION"
+  CURRENT="$(aws lambda get-function-configuration --function-name "$FUNCTION" --region "$REGION" --query MemorySize --output text)"
+  if [ "$CURRENT" != "$MEMORY" ]; then
+    echo "Setting memory $CURRENT -> $MEMORY MB"
+    if aws lambda update-function-configuration --function-name "$FUNCTION" --region "$REGION" \
+         --memory-size "$MEMORY" >/dev/null 2>&1; then
+      aws lambda wait function-updated-v2 --function-name "$FUNCTION" --region "$REGION"
+    else
+      echo "Could not set $MEMORY MB (likely the account's memory quota); keeping $CURRENT MB."
+    fi
+  fi
 else
   echo "Creating $FUNCTION ($MEMORY MB)"
   create() {
