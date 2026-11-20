@@ -82,7 +82,7 @@ export function VideoCapture({ code, fields, resume = false }: { code: string; f
   const [revealed, setRevealed] = useState(0);
 
   const clipRef = useRef<Clip | null>(null);
-  const liveRef = useRef<HTMLVideoElement>(null);
+  const liveRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -90,6 +90,16 @@ export function VideoCapture({ code, fields, resume = false }: { code: string; f
   const startedAtRef = useRef(0);
 
   useEffect(() => () => stopStream(), []);
+
+  /** Ref callback for the live preview: runs when the element mounts, however long React takes to render it. */
+  function attachPreview(el: HTMLVideoElement | null) {
+    liveRef.current = el;
+    if (!el || !streamRef.current || el.srcObject === streamRef.current) return;
+    el.srcObject = streamRef.current;
+    el.play().catch(() => {
+      /* autoplay refused (rare for a muted inline video); autoPlay below retries on its own */
+    });
+  }
 
   // Tick the checklist off field by field, then move on to the form.
   useEffect(() => {
@@ -144,13 +154,8 @@ export function VideoCapture({ code, fields, resume = false }: { code: string; f
       return;
     }
     streamRef.current = stream;
+    // The preview <video> only mounts once the phase is "recording"; attachPreview hooks the stream up then.
     setPhase("recording");
-    requestAnimationFrame(() => {
-      if (liveRef.current) {
-        liveRef.current.srcObject = stream;
-        void liveRef.current.play();
-      }
-    });
 
     const mimeType = pickMime();
     const recorder = new MediaRecorder(stream, { ...(mimeType ? { mimeType } : {}), videoBitsPerSecond: 1_500_000 });
@@ -263,7 +268,7 @@ export function VideoCapture({ code, fields, resume = false }: { code: string; f
       <div className="relative mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-3xl bg-forest bg-candle text-cream shadow-lift">
         {phase === "recording" && (
           <>
-            <video ref={liveRef} muted playsInline className="h-full w-full -scale-x-100 object-cover" />
+            <video ref={attachPreview} muted playsInline autoPlay className="h-full w-full -scale-x-100 object-cover" />
             <div className="absolute inset-x-0 top-0 h-1 bg-cream/20">
               <div className="h-full bg-sand transition-[width] duration-200" style={{ width: `${Math.min(100, (elapsed / VIDEO_MAX_SECONDS) * 100)}%` }} />
             </div>
