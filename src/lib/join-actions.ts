@@ -138,6 +138,7 @@ export async function saveProfile(code: string, formData: FormData) {
     // Only stored for matchmaking events; other event types never ask.
     gender: matchmaking && gender in GENDERS ? (gender as Gender) : "",
     interestedIn: matchmaking && interestedIn in INTERESTS ? (interestedIn as Interest) : "",
+    showVideo: formData.get("showVideo") === "on" && !!me.videoKey,
   };
   if (!fields.name) redirect(`/l/${code}/me?error=name`);
   if (matchmaking && (!fields.gender || !fields.interestedIn)) redirect(`/l/${code}/me?error=prefs`);

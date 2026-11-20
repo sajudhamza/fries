@@ -7,6 +7,7 @@ import { loadAttendee } from "@/lib/attendee";
 import { canInteract, pair } from "@/lib/social";
 import { blockProfile } from "@/lib/social-actions";
 import { store } from "@/lib/store";
+import { introVideoUrl } from "@/lib/video-storage";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export default async function PersonPage({ params }: { params: { code: string; i
   const p = await s.getProfile(params.id);
   // Strict boundary: other locations, non-matching preferences and blocks all look like "not found".
   if (!p || !(await canInteract(loc, me, p))) notFound();
-  const match = await s.findMatch(...pair(me.id, p.id));
+  const [match, video] = await Promise.all([s.findMatch(...pair(me.id, p.id)), introVideoUrl(p)]);
   const f = p.fields;
   const business = loc.eventType === "business";
   const facts = (business ? [f.occupation, f.pronouns] : [f.height, f.pronouns, f.occupation]).filter(Boolean);
@@ -31,9 +32,20 @@ export default async function PersonPage({ params }: { params: { code: string; i
         </Link>
         <BlockMenu name={f.name} blockAction={blockProfile.bind(null, loc.code, p.id)} />
       </div>
-      <div className="mt-4">
-        <Avatar name={f.name} photo={p.photo} size="lg" />
-      </div>
+      {video ? (
+        <video
+          src={video}
+          poster={p.photo ?? undefined}
+          controls
+          playsInline
+          preload="metadata"
+          className="mt-4 aspect-[4/5] w-full max-w-sm rounded-3xl bg-forest object-cover shadow-lift"
+        />
+      ) : (
+        <div className="mt-4">
+          <Avatar name={f.name} photo={p.photo} size="lg" />
+        </div>
+      )}
       <h1 className="mt-5 font-display text-4xl">{f.name}{!business && f.age ? <span className="font-normal text-forest/70">, {f.age}</span> : null}</h1>
       {facts.length > 0 && <p className="mt-1 text-forest/70">{facts.join(" · ")}</p>}
 

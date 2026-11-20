@@ -8,6 +8,7 @@ import { LateFill } from "@/components/LateFill";
 import { workerMode } from "@/lib/worker";
 import { loadAttendee } from "@/lib/attendee";
 import { leaveLocation, saveProfile } from "@/lib/join-actions";
+import { videoStorage } from "@/lib/video-storage";
 import type { ProfileFields } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,9 @@ export default async function MePage({ params, searchParams }: { params: { code:
   const fromVideo = (k: keyof ProfileFields) =>
     me.extracted.includes(k) ? <span className="ml-2 normal-case tracking-normal text-brass">from your video</span> : null;
   const isLive = me.status === "live";
+  // Your own intro, so you can see what others will see. New profiles default to showing it.
+  const ownVideo = me.videoKey ? await videoStorage().readUrl(me.videoKey, "", 2 * 3600).catch(() => null) : null;
+  const showVideoDefault = isLive ? f.showVideo : true;
   const matchmaking = loc.eventType === "matchmaking";
   // The worker hasn't reported back yet (slow run): keep listening for it on this page.
   const waitingForVideo =
@@ -42,6 +46,16 @@ export default async function MePage({ params, searchParams }: { params: { code:
         {searchParams.error === "name" && <Notice tone="error">Add your name so people know who you are.</Notice>}
         {searchParams.error === "prefs" && <Notice tone="error">Tell us who you are and who you&apos;d like to see.</Notice>}
         {searchParams.prefs && <Notice>The host made this a matchmaking event. Add your preferences below to keep browsing.</Notice>}
+
+        {ownVideo && (
+          <div className="card space-y-3 p-4">
+            <video src={ownVideo} poster={me.photo ?? undefined} controls playsInline preload="metadata" className="aspect-[4/5] w-full max-w-[220px] rounded-2xl bg-forest object-cover" />
+            <label className="flex gap-2 text-sm text-forest/80">
+              <input type="checkbox" name="showVideo" defaultChecked={showVideoDefault} className="mt-0.5 h-4 w-4 accent-forest" />
+              <span>Show my intro video on my profile to people at this event. It&apos;s deleted when the event ends.</span>
+            </label>
+          </div>
+        )}
 
         <div className="grid grid-cols-[110px_1fr] items-end gap-4">
           <Avatar name={f.name} photo={me.photo} />

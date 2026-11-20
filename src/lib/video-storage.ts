@@ -18,8 +18,8 @@ export interface UploadTarget {
 export interface VideoStorage {
   uploadTarget(key: string, contentType: string): Promise<UploadTarget>;
   exists(key: string): Promise<boolean>;
-  /** A short-lived URL the profile worker can download the video from. */
-  readUrl(key: string, appBase: string): Promise<string>;
+  /** A short-lived URL to download/stream the video from (the worker, or a guest's video player). */
+  readUrl(key: string, appBase: string, ttlSeconds?: number): Promise<string>;
   remove(keys: string[]): Promise<void>;
 }
 
@@ -50,8 +50,8 @@ const diskStorage: VideoStorage = {
       return false;
     }
   },
-  async readUrl(key, appBase) {
-    const exp = Date.now() + 30 * 60_000;
+  async readUrl(key, appBase, ttlSeconds = 1800) {
+    const exp = Date.now() + ttlSeconds * 1000;
     const qs = new URLSearchParams({ key, exp: String(exp), sig: sign(`read:${key}:${exp}`) });
     return `${appBase}/api/video?${qs}`;
   },
@@ -84,12 +84,12 @@ function supabaseStorage(base: string, serviceKey: string, bucket: string): Vide
       const items = (await r.json()) as { name: string }[];
       return items.some((i) => i.name === name);
     },
-    async readUrl(key) {
-      // Private bucket: hand the worker a link that expires in 30 minutes (covers cold starts + retries).
+    async readUrl(key, _appBase, ttlSeconds = 1800) {
+      // Private bucket: signed links only. 30 minutes for the worker (covers cold starts + retries).
       const r = await fetch(`${api}/object/sign/${bucket}/${key}`, {
         method: "POST",
         headers: { ...auth, "Content-Type": "application/json" },
-        body: JSON.stringify({ expiresIn: 1800 }),
+        body: JSON.stringify({ expiresIn: ttlSeconds }),
       });
       if (!r.ok) throw new Error(`Could not sign video URL (${r.status})`);
       const { signedURL } = (await r.json()) as { signedURL: string };
@@ -115,4 +115,19 @@ export function videoStorage(): VideoStorage {
     throw new Error("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not set. Local video storage only works in development.");
   }
   return diskStorage;
+}
+
+/**
+ * A playable link to a guest's intro, or null if they chose not to show it (or it's gone).
+ * Callers must already have checked the viewer may see this profile; the link itself is signed
+ * and expires after 2 hours, and the video is deleted with the profile when the event ends.
+ */
+export async function introVideoUrl(p: { videoKey: string | null; fields: { showVideo: boolean } }): Promise<string | null> {
+  if (!p.videoKey || !p.fields.showVideo) return null;
+  try {
+    return await videoStorage().readUrl(p.videoKey, "", 2 * 3600);
+  } catch (e) {
+    console.error("[introVideoUrl] could not sign video link:", e);
+    return null;
+  }
 }

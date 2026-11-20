@@ -15,6 +15,8 @@ export interface DeckCard {
   bio: string;
   hobbies: string[];
   lookingFor: string;
+  /** Has a playable intro; the card links to the profile page to watch it. */
+  hasVideo: boolean;
 }
 
 const THRESHOLD = 110; // px of horizontal drag that counts as a decision
@@ -133,7 +135,7 @@ export function SwipeDeck({ code, cards, likeLabel, passLabel, matchedTitle, res
           onPointerCancel={onPointerUp}
           onLostPointerCapture={(e) => start.current && onPointerUp(e)}
         >
-          <CardFace card={card} details={details} />
+          <CardFace card={card} details={details} code={code} />
           <span className="pointer-events-none absolute left-5 top-6 -rotate-12 rounded-xl border-[3px] border-cream bg-forest/80 px-3 py-1 font-display text-2xl uppercase text-cream" style={{ opacity: likeOpacity }}>
             {likeLabel}
           </span>
@@ -173,9 +175,20 @@ export function SwipeDeck({ code, cards, likeLabel, passLabel, matchedTitle, res
   );
 }
 
-function CardFace({ card, details = false, className }: { card: DeckCard; details?: boolean; className?: string }) {
+function CardFace({ card, details = false, className, code }: { card: DeckCard; details?: boolean; className?: string; code?: string }) {
   return (
     <div className={clsx("absolute inset-0 overflow-hidden rounded-3xl bg-forest shadow-lift", className)}>
+      {card.hasVideo && code && (
+        <Link
+          href={`/l/${code}/people/${card.id}`}
+          // Keep the tap away from the swipe handler so it opens the profile instead of toggling details.
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
+          className="absolute right-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-forest-ink/75 px-3 py-1.5 text-xs font-semibold text-cream backdrop-blur"
+        >
+          ▶ Watch intro
+        </Link>
+      )}
       {card.photo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={card.photo} alt="" draggable={false} className="h-full w-full object-cover" />

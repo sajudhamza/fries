@@ -44,6 +44,8 @@ export interface ProfileFields {
   /** Matchmaking events only: the guest's own gender and who they want to see. */
   gender: Gender | "";
   interestedIn: Interest | "";
+  /** The guest chose to play their intro video on their profile. Off for anyone who joined before it was offered. */
+  showVideo: boolean;
 }
 
 export type Gender = "man" | "woman" | "nonbinary";
@@ -81,6 +83,7 @@ export const EMPTY_FIELDS: ProfileFields = {
   lookingFor: "",
   gender: "",
   interestedIn: "",
+  showVideo: false,
 };
 
 /**

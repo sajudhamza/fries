@@ -15,7 +15,10 @@ function toCard(p: Profile, business: boolean): DeckCard {
   const f = p.fields;
   // At business events lead with what people do; elsewhere with height and pronouns.
   const facts = (business ? [f.occupation, f.pronouns] : [f.height, f.pronouns, f.occupation]).filter(Boolean);
-  return { id: p.id, name: f.name, age: business ? null : f.age, photo: p.photo, facts, bio: f.bio, hobbies: f.hobbies, lookingFor: f.lookingFor };
+  return {
+    id: p.id, name: f.name, age: business ? null : f.age, photo: p.photo, facts, bio: f.bio, hobbies: f.hobbies, lookingFor: f.lookingFor,
+    hasVideo: !!p.videoKey && f.showVideo,
+  };
 }
 
 export default async function DiscoverPage({ params }: { params: { code: string } }) {

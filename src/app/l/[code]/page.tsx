@@ -72,8 +72,8 @@ export default async function JoinPage({ params, searchParams }: { params: { cod
         <label className="flex gap-3 text-sm text-forest/70">
           <input type="checkbox" name="consent" className="mt-0.5 h-4 w-4 accent-forest" required />
           <span>
-            I agree that my intro video is processed to create my profile, that my profile is shown only to people at this event,
-            and that both are deleted when the event ends (<LocalTime iso={loc.endsAt} />).
+            I agree that my intro video is processed to create my profile, that my profile (and my video, if I choose to show it)
+            is shown only to people at this event, and that both are deleted when the event ends (<LocalTime iso={loc.endsAt} />).
           </span>
         </label>
         <button className="btn-primary w-full py-3.5 text-base">Let&apos;s go</button>
