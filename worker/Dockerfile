@@ -22,6 +22,8 @@ ARG WHISPER_REPO=Systran/faster-whisper-small
 ARG LLM_REPO=unsloth/Qwen3.5-2B-GGUF
 ARG LLM_FILE=Qwen3.5-2B-Q4_K_M.gguf
 RUN pip install --no-cache-dir "huggingface_hub>=0.25"
+# Plain HTTPS downloads: Hugging Face's Xet transfer can refuse anonymous requests (401) mid-build.
+ENV HF_HUB_DISABLE_XET=1
 RUN python -c "from huggingface_hub import snapshot_download, hf_hub_download; import shutil; \
 snapshot_download('${WHISPER_REPO}', local_dir='/opt/models/whisper', allow_patterns=['config.json','model.bin','tokenizer.json','vocabulary.*','preprocessor_config.json']); \
 shutil.copy(hf_hub_download('${LLM_REPO}', '${LLM_FILE}'), '/opt/models/llm.gguf')"
