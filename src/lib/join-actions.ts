@@ -41,6 +41,7 @@ export async function joinLocation(code: string, formData: FormData) {
     videoKey: null,
     videoSeconds: null,
     transcript: null,
+    captions: null,
     consentAt: now,
     createdAt: now,
     updatedAt: now,
@@ -80,9 +81,9 @@ export async function finishUpload(
   }
   const photo = meta.photo && meta.photo.startsWith("data:image/jpeg;base64,") && meta.photo.length < 400_000 ? meta.photo : null;
   const s = await store();
-  await s.updateProfile(me.id, { status: "processing", photo, transcript: null, updatedAt: nowIso() });
+  await s.updateProfile(me.id, { status: "processing", photo, transcript: null, captions: null, updatedAt: nowIso() });
 
-  const updated = { ...me, status: "processing" as const, photo, transcript: null };
+  const updated = { ...me, status: "processing" as const, photo, transcript: null, captions: null };
   let dispatched = false;
   try {
     dispatched = await dispatchProfileJob(updated, loc);

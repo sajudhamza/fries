@@ -1,7 +1,7 @@
 /** Callback from the profile worker. Authenticated by the per-job token the app issued on dispatch. */
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { completeProcessing, sanitizeFields } from "@/lib/processing";
+import { completeProcessing, sanitizeCaptions, sanitizeFields } from "@/lib/processing";
 import { store } from "@/lib/store";
 import { jobToken } from "@/lib/worker";
 
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as {
-    profileId?: string; token?: string; ok?: boolean; transcript?: string; fields?: unknown; error?: string; timings?: unknown;
+    profileId?: string; token?: string; ok?: boolean; transcript?: string; captions?: unknown; fields?: unknown; error?: string; timings?: unknown;
   } | null;
   if (!body?.profileId || !body.token) return NextResponse.json({ error: "bad request" }, { status: 400 });
 
@@ -37,6 +37,6 @@ export async function POST(req: NextRequest) {
     delete found.gender;
     delete found.interestedIn;
   }
-  await completeProcessing(me, found, transcript);
+  await completeProcessing(me, found, transcript, body.ok ? sanitizeCaptions(body.captions) : null);
   return NextResponse.json({ ok: true });
 }

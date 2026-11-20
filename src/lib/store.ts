@@ -75,7 +75,10 @@ function readDb(): FileDb {
     db.matches ??= [];
     db.messages ??= [];
     for (const l of db.locations) l.eventType ??= "social";
-    for (const p of db.profiles) p.fields = { ...EMPTY_FIELDS, ...p.fields };
+    for (const p of db.profiles) {
+      p.fields = { ...EMPTY_FIELDS, ...p.fields };
+      p.captions ??= null;
+    }
     return db;
   } catch {
     return { locations: [], profiles: [], swipes: [], matches: [], messages: [] };

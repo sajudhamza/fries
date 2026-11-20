@@ -28,6 +28,7 @@ function pool(): Pool {
 // database. They mirror supabase/migrations; anything destructive belongs there, not here.
 const ENSURE_SCHEMA = [
   "alter table profiles add column if not exists transcript text",
+  "alter table profiles add column if not exists captions jsonb",
   "alter table locations add column if not exists event_type text not null default 'social'",
   `create table if not exists swipes (
      from_id uuid not null references profiles(id) on delete cascade,
@@ -107,6 +108,7 @@ function toProfile(r: any): Profile {
     videoKey: r.video_key,
     videoSeconds: r.video_seconds,
     transcript: r.transcript ?? null,
+    captions: r.captions ?? null,
     consentAt: iso(r.consent_at)!,
     createdAt: iso(r.created_at)!,
     updatedAt: iso(r.updated_at)!,
@@ -141,9 +143,9 @@ const LOC_COLS: Record<string, string> = {
 };
 const PROF_COLS: Record<string, string> = {
   status: "status", fields: "fields", extracted: "extracted", photo: "photo", videoKey: "video_key",
-  videoSeconds: "video_seconds", transcript: "transcript", consentAt: "consent_at", createdAt: "created_at", updatedAt: "updated_at",
+  videoSeconds: "video_seconds", transcript: "transcript", captions: "captions", consentAt: "consent_at", createdAt: "created_at", updatedAt: "updated_at",
 };
-const JSON_COLS = new Set(["fields", "extracted"]);
+const JSON_COLS = new Set(["fields", "extracted", "captions"]);
 
 async function update(table: string, cols: Record<string, string>, id: string, patch: Record<string, unknown>) {
   const sets: string[] = [];

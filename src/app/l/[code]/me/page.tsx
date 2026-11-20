@@ -49,7 +49,9 @@ export default async function MePage({ params, searchParams }: { params: { code:
 
         {ownVideo && (
           <div className="card space-y-3 p-4">
-            <video src={ownVideo} poster={me.photo ?? undefined} controls playsInline preload="metadata" className="aspect-[4/5] w-full max-w-[220px] rounded-2xl bg-forest object-cover" />
+            <video src={ownVideo} poster={me.photo ?? undefined} controls playsInline preload="metadata" className="aspect-[4/5] w-full max-w-[220px] rounded-2xl bg-forest object-cover">
+              {me.captions?.length ? <track kind="captions" src={`/l/${loc.code}/captions/${me.id}`} srcLang="en" label="Captions" default /> : null}
+            </video>
             <label className="flex gap-2 text-sm text-forest/80">
               <input type="checkbox" name="showVideo" defaultChecked={showVideoDefault} className="mt-0.5 h-4 w-4 accent-forest" />
               <span>Show my intro video on my profile to people at this event. It&apos;s deleted when the event ends.</span>

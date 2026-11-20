@@ -67,9 +67,18 @@ export interface Profile {
   videoSeconds: number | null;
   /** Speech-to-text of the intro video. Null until transcribed; deleted with the profile. */
   transcript: string | null;
+  /** Timed caption cues from the transcript, shown over the intro video. Null until transcribed. */
+  captions: Caption[] | null;
   consentAt: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/** One caption cue, in seconds from the start of the intro video. */
+export interface Caption {
+  start: number;
+  end: number;
+  text: string;
 }
 
 export const EMPTY_FIELDS: ProfileFields = {

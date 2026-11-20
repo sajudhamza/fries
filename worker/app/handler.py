@@ -20,6 +20,7 @@ import time
 import traceback
 import urllib.request
 
+import captions
 import rules
 
 MODEL_DIR = os.environ.get("MODEL_DIR", "/opt/models")
@@ -64,16 +65,27 @@ def download(url: str) -> str:
     return path
 
 
-def transcribe(path: str, prompt: str | None) -> tuple[str, str]:
+def transcribe(path: str, prompt: str | None) -> tuple[str, str, list[dict]]:
+    """Returns the transcript, its language, and timed caption cues for the video player."""
     segments, info = _get_whisper().transcribe(
         path,
         beam_size=1,
         vad_filter=True,  # skip silence; big speed-up on real recordings
         initial_prompt=prompt,
         condition_on_previous_text=False,
+        word_timestamps=True,  # for captions; timings stay in the original video's clock even with VAD
     )
-    text = " ".join(s.text.strip() for s in segments).strip()
-    return text, info.language
+    segs = [
+        {
+            "start": s.start,
+            "end": s.end,
+            "text": s.text,
+            "words": [{"start": w.start, "end": w.end, "word": w.word} for w in (s.words or [])],
+        }
+        for s in segments
+    ]
+    text = " ".join(s["text"].strip() for s in segs).strip()
+    return text, info.language, captions.cues(segs)
 
 
 SCHEMA = {
@@ -184,14 +196,16 @@ def process(job: dict) -> dict:
         timings["download"] = round(time.time() - t, 2)
 
         t = time.time()
-        transcript, language = transcribe(path, job.get("prompt"))
+        transcript, language, caption_cues = transcribe(path, job.get("prompt"))
         timings["transcribe"] = round(time.time() - t, 2)
 
         t = time.time()
         llm = llm_extract(transcript) if len(rules.words(transcript)) >= 5 else {}
         timings["extract"] = round(time.time() - t, 2)
 
-        result.update(ok=True, transcript=transcript, language=language, fields=build_fields(transcript, llm))
+        result.update(
+            ok=True, transcript=transcript, language=language, captions=caption_cues, fields=build_fields(transcript, llm)
+        )
     except Exception as e:  # report failures to the app so the guest isn't left waiting
         traceback.print_exc()
         result["error"] = f"{type(e).__name__}: {e}"[:500]

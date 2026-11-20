@@ -40,7 +40,9 @@ export default async function PersonPage({ params }: { params: { code: string; i
           playsInline
           preload="metadata"
           className="mt-4 aspect-[4/5] w-full max-w-sm rounded-3xl bg-forest object-cover shadow-lift"
-        />
+        >
+          {p.captions?.length ? <track kind="captions" src={`/l/${loc.code}/captions/${p.id}`} srcLang="en" label="Captions" default /> : null}
+        </video>
       ) : (
         <div className="mt-4">
           <Avatar name={f.name} photo={p.photo} size="lg" />

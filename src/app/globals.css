@@ -28,3 +28,12 @@ body { @apply bg-cream bg-paper bg-fixed font-sans text-forest antialiased; }
   .headline { @apply font-serif text-3xl leading-tight text-forest; }
   .display { @apply font-display leading-[0.9] text-forest; }
 }
+
+/* Captions on intro videos: brand colours, readable on a phone. */
+video::cue {
+  background-color: rgba(20, 36, 27, 0.82);
+  color: #fbf6eb;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.95em;
+  line-height: 1.35;
+}
